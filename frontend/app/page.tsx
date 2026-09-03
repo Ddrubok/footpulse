@@ -17,6 +17,7 @@ interface Player {
   nationality_code?: string;
   position?: string;
   photo_url?: string;
+  trend_score?: number;
 }
 
 interface Article {
@@ -57,7 +58,9 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://tired-east-small-y
 
 const COUNTRY_FLAGS: Record<string, string> = {
   KR: "🇰🇷", ES: "🇪🇸", GB: "🇬🇧", US: "🇺🇸", FR: "🇫🇷",
-  IT: "🇮🇹", JP: "🇯🇵", BR: "🇧🇷", NO: "🇳🇴", EG: "🇪🇬", DE: "🇩🇪"
+  IT: "🇮🇹", JP: "🇯🇵", BR: "🇧🇷", NO: "🇳🇴", EG: "🇪🇬", 
+  DE: "🇩🇪", BE: "🇧🇪", UY: "🇺🇾", PL: "🇵🇱", AR: "🇦🇷", 
+  NG: "🇳🇬", PT: "🇵🇹", TU: "🇹🇷"
 };
 
 const LANG_NAMES: Record<string, string> = {
@@ -67,9 +70,9 @@ const LANG_NAMES: Record<string, string> = {
 
 const I18N: Record<string, Record<string, string>> = {
   ko: {
-    hubTitle: "선수 중심 축구 인텔리전스 및 다국적 토크 커뮤니티",
-    searchPlaceholder: "선수 검색 (초성 ㅅㅎㅁ, Son, Yamal, 바르셀로나, LAFC)...",
-    trending: "주목받는 선수:",
+    hubTitle: "구글 트렌드 기반 선수 허브 & 글로벌 다국어 교차 번역 커뮤니티",
+    searchPlaceholder: "선수 검색 (초성 ㅅㅎㅁ, Musiala, Guler, 바르셀로나, 뮌헨)...",
+    trending: "오늘의 트렌딩 스타:",
     tabNews: "뉴스 및 이적",
     tabReactions: "해외 현지 반응",
     tabTalk: "글로벌 토크",
@@ -83,7 +86,7 @@ const I18N: Record<string, Record<string, string>> = {
     writeComment: "모국어로 자유롭게 의견을 공유하세요",
     postComment: "등록",
     nicknamePlaceholder: "닉네임",
-    commentPlaceholder: "선수의 최근 활약이나 이적에 대한 의견을 남겨주세요...",
+    commentPlaceholder: "선수의 활약이나 이적설에 대한 의견을 남겨주세요...",
     tier1: "Tier 1 공식 외신",
     tier2: "Tier 2 전담 기자",
     tier3: "Tier 3 이적 보도",
@@ -92,9 +95,9 @@ const I18N: Record<string, Record<string, string>> = {
     emptyComments: "등록된 팬 코멘트가 없습니다. 첫 의견을 남겨보세요.",
   },
   en: {
-    hubTitle: "Player-Centric Football Intelligence & Global Discussion",
-    searchPlaceholder: "Search player (e.g., Son, Yamal, Barcelona, LAFC)...",
-    trending: "Featured Players:",
+    hubTitle: "Trend-Driven Football Player Hub & Cross-Language Community",
+    searchPlaceholder: "Search player (e.g., Son, Musiala, Guler, Barcelona, Bayern)...",
+    trending: "Trending Stars Today:",
     tabNews: "News & Transfers",
     tabReactions: "Global Consensus",
     tabTalk: "Global Talk",
@@ -117,9 +120,9 @@ const I18N: Record<string, Record<string, string>> = {
     emptyComments: "No comments yet. Start the conversation.",
   },
   ja: {
-    hubTitle: "選手特化型フットボールインテリジェンス＆多言語コミュニティ",
-    searchPlaceholder: "選手検索 (例: ソン・フンミン, ヤマル, バルセロナ)...",
-    trending: "注目選手:",
+    hubTitle: "Googleトレンド連動 選手専用ハブ＆多言語コミュニティ",
+    searchPlaceholder: "選手検索 (例: ソン・フンミン, ムシアラ, レアル, バルサ)...",
+    trending: "本日の急上昇選手:",
     tabNews: "ニュース・移籍",
     tabReactions: "海外現地反応",
     tabTalk: "グローバルトーク",
@@ -142,9 +145,9 @@ const I18N: Record<string, Record<string, string>> = {
     emptyComments: "コメントがありません。最初の意見を投稿しましょう。",
   },
   zh: {
-    hubTitle: "球员专属足球资讯中心与多语言球迷社群",
-    searchPlaceholder: "搜索球员 (例如: 孙兴慜, 亚马尔, 巴萨, 皇马)...",
-    trending: "聚焦球星:",
+    hubTitle: "热搜驱动球员专属资讯中心与跨国球迷广场",
+    searchPlaceholder: "搜索球员 (例如: 孙兴慜, 居莱尔, 穆西亚拉, 皇马, 拜仁)...",
+    trending: "今日热搜榜:",
     tabNews: "新闻与转会",
     tabReactions: "海外舆情",
     tabTalk: "全球对话",
@@ -167,16 +170,16 @@ const I18N: Record<string, Record<string, string>> = {
     emptyComments: "暂无讨论，发表第一条评论吧。",
   },
   fr: {
-    hubTitle: "Hub Joueurs Football & Espace de Discussion International",
-    searchPlaceholder: "Rechercher un joueur (ex: Yamal, Mbappé, Son, Real)...",
-    trending: "Joueurs à la une:",
+    hubTitle: "Hub Joueurs Football Tendance & Espace International",
+    searchPlaceholder: "Rechercher un joueur (ex: Yamal, Musiala, Son, Real)...",
+    trending: "Joueurs en tendance:",
     tabNews: "Actualités & Transferts",
     tabReactions: "Avis Internationaux",
     tabTalk: "Discussion Globale",
     favorite: "Suivre",
     favorited: "Suivi",
     aiBriefing: "Synthèse des réactions",
-    viewOriginal: "Voir la version originale",
+    viewOriginal: "Voir l'original",
     viewTranslated: "Voir la traduction",
     translatedFrom: "Traduit en",
     originalLang: "Langue source",
@@ -192,9 +195,9 @@ const I18N: Record<string, Record<string, string>> = {
     emptyComments: "Aucun commentaire pour le moment.",
   },
   it: {
-    hubTitle: "Hub Calciatori & Community di Discussione Multilingue",
-    searchPlaceholder: "Cerca calciatore (es: Yamal, Son, Mbappé, Barcellona)...",
-    trending: "In primo piano:",
+    hubTitle: "Hub Calciatori Top Trend & Community Multilingue",
+    searchPlaceholder: "Cerca calciatore (es: Yamal, Musiala, Son, Barcellona)...",
+    trending: "Top Calciatori del giorno:",
     tabNews: "Notizie & Mercato",
     tabReactions: "Reazioni Estere",
     tabTalk: "Discussione Globale",
@@ -233,10 +236,11 @@ const stripHtml = (str?: string) => {
 
 export default function Home() {
   const [lang, setLang] = useState("ko");
-  const [players, setPlayers] = useState<Player[]>([]);
+  const [trendingPlayers, setTrendingPlayers] = useState<Player[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Player[]>([]);
+  const [searching, setSearching] = useState(false);
   const [activeTab, setActiveTab] = useState<"news" | "reactions" | "talk">("news");
   
   const [articles, setArticles] = useState<Article[]>([]);
@@ -255,43 +259,49 @@ export default function Home() {
 
   const t = I18N[lang] || I18N.ko;
 
+  // 1. 트렌딩 선수 랭킹 목록 로드
   useEffect(() => {
-    const fetchPlayers = async () => {
+    const fetchTrending = async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/players`);
+        const res = await fetch(`${API_BASE}/api/players/trending`);
         if (res.ok) {
           const data: Player[] = await res.json();
-          setPlayers(data);
+          setTrendingPlayers(data);
           if (data.length > 0 && !selectedPlayer) {
             setSelectedPlayer(data[0]);
           }
         }
       } catch (err) {
-        console.error("Failed to load players:", err);
+        console.error("Failed to load trending players:", err);
       }
     };
-    fetchPlayers();
+    fetchTrending();
   }, []);
 
+  // 2. 온디맨드 자동 등록 지원 스마트 검색
   useEffect(() => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
       return;
     }
+    setSearching(true);
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/players?q=${encodeURIComponent(searchQuery)}`);
+        const res = await fetch(`${API_BASE}/api/players/search?q=${encodeURIComponent(searchQuery)}`);
         if (res.ok) {
           const data = await res.json();
           setSearchResults(data);
         }
       } catch (err) {
         console.error("Search error:", err);
+      } finally {
+        setSearching(false);
       }
-    }, 200);
+    }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // 3. 선택된 선수의 탭별 데이터 로드
   useEffect(() => {
     if (!selectedPlayer) return;
     const fetchTabData = async () => {
@@ -383,7 +393,7 @@ export default function Home() {
               <span>FootPulse</span>
             </h1>
             <span className="rounded bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300 border border-neutral-700">
-              v3.0 Hub
+              v3.1 Trends & API
             </span>
           </div>
           <p className="mt-1 text-xs text-neutral-400 font-normal">{t.hubTitle}</p>
@@ -407,7 +417,7 @@ export default function Home() {
         </div>
       </header>
 
-      {/* 2. 선수 통합 검색창 */}
+      {/* 2. 스마트 검색창 (온디맨드 자동 등록 지원) */}
       <div className="relative mb-5">
         <div className="flex items-center rounded-lg bg-neutral-900 px-3.5 py-2.5 border border-neutral-800 focus-within:border-neutral-600 transition">
           <Search className="h-4 w-4 text-neutral-500 mr-2.5" />
@@ -418,11 +428,14 @@ export default function Home() {
             placeholder={t.searchPlaceholder}
             className="w-full bg-transparent text-sm text-white placeholder-neutral-500 focus:outline-none"
           />
+          {searching && (
+            <div className="h-3 w-3 animate-spin rounded-full border border-neutral-400 border-t-transparent mr-1"></div>
+          )}
         </div>
 
-        {/* 검색 드롭다운 */}
+        {/* 검색 드롭다운 결과 */}
         {searchResults.length > 0 && (
-          <div className="absolute z-30 mt-1.5 w-full rounded-lg bg-neutral-900 p-1.5 border border-neutral-700 shadow-lg">
+          <div className="absolute z-30 mt-1.5 w-full rounded-lg bg-neutral-900 p-1.5 border border-neutral-700 shadow-lg max-h-80 overflow-y-auto">
             {searchResults.map((player) => (
               <button
                 key={player.id}
@@ -433,26 +446,39 @@ export default function Home() {
                 }}
                 className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left hover:bg-neutral-800 transition"
               >
-                <div className="flex items-center gap-2.5">
-                  <span className="text-base">{COUNTRY_FLAGS[player.nationality_code || ""] || "⚽"}</span>
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-md overflow-hidden bg-neutral-800 border border-neutral-700 flex-shrink-0">
+                    <img src={player.photo_url} alt={player.name_ko} className="h-full w-full object-cover" />
+                  </div>
                   <div>
-                    <span className="font-semibold text-white text-sm">{player.name_ko} ({player.name_en})</span>
-                    <span className="block text-xs text-neutral-400">{player.current_club_name} · {player.position}</span>
+                    <span className="font-semibold text-white text-sm">
+                      {player.name_ko} ({player.name_en})
+                    </span>
+                    <span className="block text-xs text-neutral-400">
+                      {player.current_club_name} · {player.position}
+                    </span>
                   </div>
                 </div>
-                <ArrowRight className="h-3.5 w-3.5 text-neutral-500" />
+                <div className="flex items-center gap-2">
+                  {player.trend_score ? (
+                    <span className="text-[11px] font-semibold text-neutral-400">
+                      Score {player.trend_score}
+                    </span>
+                  ) : null}
+                  <ArrowRight className="h-3.5 w-3.5 text-neutral-500" />
+                </div>
               </button>
             ))}
           </div>
         )}
       </div>
 
-      {/* 3. 주목받는 선수 바 (단정하고 일관된 뱃지) */}
+      {/* 3. 오늘 트렌딩 스타 랭킹 바 (Top 15) */}
       <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-        <span className="text-xs font-semibold text-neutral-400 whitespace-nowrap mr-1">
+        <span className="text-xs font-semibold text-neutral-400 whitespace-nowrap mr-1 flex items-center gap-1">
           {t.trending}
         </span>
-        {players.map((p) => {
+        {trendingPlayers.map((p, index) => {
           const isSelected = selectedPlayer?.id === p.id;
           return (
             <button
@@ -464,6 +490,7 @@ export default function Home() {
                   : "bg-neutral-900 text-neutral-300 hover:bg-neutral-800 border border-neutral-800"
               }`}
             >
+              <span className="text-[11px] font-bold text-neutral-400">{index + 1}.</span>
               <span>{COUNTRY_FLAGS[p.nationality_code || ""] || "⚽"}</span>
               {p.name_ko}
             </button>
@@ -471,14 +498,14 @@ export default function Home() {
         })}
       </div>
 
-      {/* 4. 선수 전용 허브 히어로 카드 (플랫 다크 서피스 + 1px 헤어라인) */}
+      {/* 4. 선수 전용 허브 히어로 카드 (공식 고화질 CDN 사진) */}
       {selectedPlayer && (
         <div className="mb-6 rounded-lg bg-neutral-900 p-5 border border-neutral-800">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="relative h-20 w-20 rounded-md overflow-hidden border border-neutral-700 bg-neutral-800 flex-shrink-0">
+              <div className="relative h-20 w-20 rounded-md overflow-hidden border border-neutral-700 bg-neutral-800 flex-shrink-0 flex items-center justify-center">
                 <img
-                  src={selectedPlayer.photo_url || "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=400"}
+                  src={selectedPlayer.photo_url || "https://r2.thesportsdb.com/images/media/player/cutout/m9n4ja1761512633.png"}
                   alt={selectedPlayer.name_ko}
                   className="h-full w-full object-cover"
                 />
@@ -499,6 +526,11 @@ export default function Home() {
                   <span className="text-neutral-400 font-normal">
                     {selectedPlayer.nationality}
                   </span>
+                  {selectedPlayer.trend_score ? (
+                    <span className="rounded bg-neutral-800 px-1.5 py-0.5 text-[11px] font-semibold text-neutral-300 border border-neutral-700">
+                      Trend {selectedPlayer.trend_score}
+                    </span>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -519,7 +551,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* 5. 선수 허브 3대 탭 (단정한 분할 탭) */}
+      {/* 5. 선수 허브 3대 탭 */}
       <div className="mb-6 flex rounded-lg bg-neutral-900 p-1 border border-neutral-800">
         <button
           onClick={() => setActiveTab("news")}
@@ -575,12 +607,12 @@ export default function Home() {
                         <span className="rounded bg-neutral-800 px-2 py-0.5 font-medium text-neutral-300 border border-neutral-700">
                           {article.tier === 1 ? t.tier1 : article.tier === 2 ? t.tier2 : t.tier3}
                         </span>
-                        <span className="rounded bg-neutral-800 px-2 py-0.5 text-[11px] text-neutral-300 border border-neutral-700">
+                        <span className="rounded bg-neutral-800 px-2 py-0.5 text-[11px] font-semibold text-neutral-300 border border-neutral-700">
                           {article.transfer_status || "REPORT"}
                         </span>
                         <span className="text-neutral-400">{article.source_name}</span>
                       </div>
-                      <span className="text-xs text-neutral-500 ">
+                      <span className="text-xs text-neutral-500">
                         {article.published_at ? new Date(article.published_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }) : "최신"}
                       </span>
                     </div>
@@ -727,7 +759,7 @@ export default function Home() {
                           <div className="flex items-center gap-2">
                             <span className="text-base">{flag}</span>
                             <span className="text-sm font-semibold text-white">{c.author_name}</span>
-                            <span className="text-xs text-neutral-500 ">
+                            <span className="text-xs text-neutral-500">
                               {new Date(c.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}
                             </span>
                           </div>
