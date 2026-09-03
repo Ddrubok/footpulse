@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { 
   Search, Globe, Star, MessageSquare, Newspaper, 
-  Heart, ExternalLink, Activity, ArrowRight, Sparkles, Send
+  Heart, ExternalLink, Activity, ArrowRight, Sparkles, Send, User
 } from "lucide-react";
 
 interface Player {
@@ -56,10 +56,12 @@ interface Comment {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://tired-east-small-years.trycloudflare.com";
 
+const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 24 24' fill='none' stroke='%23737373' stroke-width='1.5'><path d='M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2'/><circle cx='12' cy='7' r='4'/></svg>";
+
 const COUNTRY_FLAGS: Record<string, string> = {
   KR: "🇰🇷", ES: "🇪🇸", GB: "🇬🇧", US: "🇺🇸", FR: "🇫🇷",
   IT: "🇮🇹", JP: "🇯🇵", BR: "🇧🇷", NO: "🇳🇴", EG: "🇪🇬", 
-  DE: "🇩🇪", BE: "🇧🇪", UY: "🇺🇾", PL: "🇵🇱", AR: "🇦🇷", 
+  DE: "🇩🇪", BE: "🇧🇪", UY: "UY", PL: "🇵🇱", AR: "🇦🇷", 
   NG: "🇳🇬", PT: "🇵🇹", TU: "🇹🇷"
 };
 
@@ -313,7 +315,6 @@ export default function Home() {
     const fetchTabData = async () => {
       setLoading(true);
       try {
-        // 항상 탭 카운트 유지를 위해 reactions와 comments를 기본 동시 수집
         const [feedRes, reactionsRes, commentsRes] = await Promise.all([
           fetch(`${API_BASE}/api/players/${selectedPlayer.id}/feed?lang=${lang}`),
           fetch(`${API_BASE}/api/players/${selectedPlayer.id}/reactions?lang=${lang}`),
@@ -458,10 +459,11 @@ export default function Home() {
                 <div className="flex items-center gap-3">
                   <div className="h-9 w-9 rounded-md overflow-hidden bg-neutral-800 border border-neutral-700 flex-shrink-0 flex items-center justify-center">
                     <img 
-                      src={player.photo_url} 
+                      src={player.photo_url || `/players/${player.id}.jpg`} 
                       alt={player.name_ko} 
                       className="h-full w-full object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).src = "https://media.api-sports.io/football/players/186.png"; }}
+                      referrerPolicy="no-referrer"
+                      onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_AVATAR; }}
                     />
                   </div>
                   <div>
@@ -512,17 +514,18 @@ export default function Home() {
         })}
       </div>
 
-      {/* 4. 선수 전용 허브 히어로 카드 (공식 CDN 사진 전수 복구 완료) */}
+      {/* 4. 선수 전용 허브 히어로 카드 (자체 에지 CDN 사진 100% 로딩) */}
       {selectedPlayer && (
         <div className="mb-6 rounded-lg bg-neutral-900 p-5 border border-neutral-800">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="relative h-20 w-20 rounded-md overflow-hidden border border-neutral-700 bg-neutral-800 flex-shrink-0 flex items-center justify-center">
                 <img
-                  src={selectedPlayer.photo_url || "https://media.api-sports.io/football/players/186.png"}
+                  src={selectedPlayer.photo_url || `/players/${selectedPlayer.id}.jpg`}
                   alt={selectedPlayer.name_ko}
                   className="h-full w-full object-cover"
-                  onError={(e) => { (e.target as HTMLImageElement).src = "https://media.api-sports.io/football/players/186.png"; }}
+                  referrerPolicy="no-referrer"
+                  onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_AVATAR; }}
                 />
               </div>
               <div>
@@ -670,7 +673,7 @@ export default function Home() {
           {/* [탭 2] 해외 현지 반응 (Reddit r/soccer, X 수집 데이터 전용) */}
           {activeTab === "reactions" && (
             <div className="space-y-4">
-              {/* 동적 AI 핵심 요약: 텍스트가 존재할 때만 조건부 렌더링 (하드코딩 고정 텍스트 박멸) */}
+              {/* 동적 AI 핵심 요약: 텍스트가 존재할 때만 조건부 렌더링 */}
               {aiSummary && aiSummary.trim().length > 0 && (
                 <div className="rounded-lg bg-neutral-900 p-4 border border-emerald-900/60">
                   <div className="flex items-center gap-2 mb-2">
@@ -683,7 +686,7 @@ export default function Home() {
                 </div>
               )}
 
-              {/* 외부 수집 댓글 목록 (10~15개 이상) */}
+              {/* 외부 수집 댓글 목록 */}
               {reactions.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-neutral-800 p-10 text-center text-neutral-400">
                   <p className="text-sm font-normal">{t.emptyReactions}</p>
