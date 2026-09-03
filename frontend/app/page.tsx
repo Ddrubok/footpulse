@@ -73,12 +73,12 @@ const I18N: Record<string, Record<string, string>> = {
     hubTitle: "구글 트렌드 기반 선수 허브 & 글로벌 다국어 교차 번역 커뮤니티",
     searchPlaceholder: "선수 검색 (초성 ㅅㅎㅁ, Musiala, Guler, 바르셀로나, 뮌헨)...",
     trending: "오늘의 트렌딩 스타:",
-    tabNews: "뉴스 및 이적",
+    tabNews: "뉴스 & 이적",
     tabReactions: "해외 현지 반응",
     tabTalk: "글로벌 토크",
     favorite: "관심 선수 등록",
     favorited: "관심 선수",
-    aiBriefing: "해외 여론 핵심 요약",
+    aiBriefing: "해외 현지 여론 핵심 요약",
     viewOriginal: "원문 확인",
     viewTranslated: "번역문 확인",
     translatedFrom: "로 번역됨",
@@ -86,24 +86,25 @@ const I18N: Record<string, Record<string, string>> = {
     writeComment: "모국어로 자유롭게 의견을 공유하세요",
     postComment: "등록",
     nicknamePlaceholder: "닉네임",
-    commentPlaceholder: "선수의 활약이나 이적설에 대한 의견을 남겨주세요...",
+    commentPlaceholder: "이 선수에 대한 의견이나 응원 메시지를 모국어로 자유롭게 남겨보세요...",
     tier1: "Tier 1 공식 외신",
     tier2: "Tier 2 전담 기자",
     tier3: "Tier 3 이적 보도",
     readOriginal: "기사 원문 보기",
     emptyNews: "해당 선수의 최신 기사를 수집 동기화 중입니다.",
-    emptyComments: "등록된 팬 코멘트가 없습니다. 첫 의견을 남겨보세요.",
+    emptyReactions: "수집된 해외 현지 반응을 동기화 중입니다.",
+    emptyComments: "등록된 자체 팬 코멘트가 없습니다. 첫 의견을 남겨보세요.",
   },
   en: {
     hubTitle: "Trend-Driven Football Player Hub & Cross-Language Community",
     searchPlaceholder: "Search player (e.g., Son, Musiala, Guler, Barcelona, Bayern)...",
     trending: "Trending Stars Today:",
     tabNews: "News & Transfers",
-    tabReactions: "Global Consensus",
+    tabReactions: "Global Reactions",
     tabTalk: "Global Talk",
     favorite: "Track Player",
     favorited: "Tracking",
-    aiBriefing: "Global Consensus Summary",
+    aiBriefing: "Overseas Consensus Summary",
     viewOriginal: "View original",
     viewTranslated: "View translation",
     translatedFrom: "Translated to",
@@ -117,18 +118,19 @@ const I18N: Record<string, Record<string, string>> = {
     tier3: "Tier 3 Report",
     readOriginal: "Read source article",
     emptyNews: "Syncing verified football coverage for this player...",
-    emptyComments: "No comments yet. Start the conversation.",
+    emptyReactions: "Syncing global fan reactions for this player...",
+    emptyComments: "No community comments yet. Start the conversation.",
   },
   ja: {
     hubTitle: "Googleトレンド連動 選手専用ハブ＆多言語コミュニティ",
     searchPlaceholder: "選手検索 (例: ソン・フンミン, ムシアラ, レアル, バルサ)...",
     trending: "本日の急上昇選手:",
-    tabNews: "ニュース・移籍",
+    tabNews: "ニュース＆移籍",
     tabReactions: "海外現地反応",
     tabTalk: "グローバルトーク",
     favorite: "お気に入り",
     favorited: "登録済み",
-    aiBriefing: "海外世論の要約",
+    aiBriefing: "海外世論の核心要約",
     viewOriginal: "原文を見る",
     viewTranslated: "翻訳を見る",
     translatedFrom: "に翻訳",
@@ -136,12 +138,13 @@ const I18N: Record<string, Record<string, string>> = {
     writeComment: "母国語で世界のファンと意見を交わしましょう",
     postComment: "投稿",
     nicknamePlaceholder: "ニックネーム",
-    commentPlaceholder: "選手のパフォーマンスや移籍に関する意見を共有...",
+    commentPlaceholder: "選手に関する意見を自由に投稿してください...",
     tier1: "Tier 1 公式外信",
     tier2: "Tier 2 担当記者",
     tier3: "Tier 3 報道",
     readOriginal: "元記事を読む",
     emptyNews: "関連ニュースを同期中です...",
+    emptyReactions: "海外反応を同期中です...",
     emptyComments: "コメントがありません。最初の意見を投稿しましょう。",
   },
   zh: {
@@ -149,11 +152,11 @@ const I18N: Record<string, Record<string, string>> = {
     searchPlaceholder: "搜索球员 (例如: 孙兴慜, 居莱尔, 穆西亚拉, 皇马, 拜仁)...",
     trending: "今日热搜榜:",
     tabNews: "新闻与转会",
-    tabReactions: "海外舆情",
+    tabReactions: "海外热议",
     tabTalk: "全球对话",
     favorite: "关注球员",
     favorited: "已关注",
-    aiBriefing: "海外舆情要点",
+    aiBriefing: "海外舆论核心速递",
     viewOriginal: "查看原文",
     viewTranslated: "查看翻译",
     translatedFrom: "已翻译为",
@@ -161,12 +164,13 @@ const I18N: Record<string, Record<string, string>> = {
     writeComment: "用母语与全球球迷直接交流",
     postComment: "发布",
     nicknamePlaceholder: "昵称",
-    commentPlaceholder: "分享你对该球员表现或转会的看法...",
+    commentPlaceholder: "分享你对该球员的看法...",
     tier1: "Tier 1 官方信源",
     tier2: "Tier 2 跟队记者",
     tier3: "Tier 3 媒体报道",
     readOriginal: "阅读原报道",
     emptyNews: "正在同步相关报道...",
+    emptyReactions: "正在同步海外热议...",
     emptyComments: "暂无讨论，发表第一条评论吧。",
   },
   fr: {
@@ -178,7 +182,7 @@ const I18N: Record<string, Record<string, string>> = {
     tabTalk: "Discussion Globale",
     favorite: "Suivre",
     favorited: "Suivi",
-    aiBriefing: "Synthèse des réactions",
+    aiBriefing: "Synthèse des avis internationaux",
     viewOriginal: "Voir l'original",
     viewTranslated: "Voir la traduction",
     translatedFrom: "Traduit en",
@@ -192,6 +196,7 @@ const I18N: Record<string, Record<string, string>> = {
     tier3: "Tier 3 Rumeur",
     readOriginal: "Lire la source",
     emptyNews: "Synchronisation des articles en cours...",
+    emptyReactions: "Synchronisation des réactions...",
     emptyComments: "Aucun commentaire pour le moment.",
   },
   it: {
@@ -217,6 +222,7 @@ const I18N: Record<string, Record<string, string>> = {
     tier3: "Tier 3 Indiscrezione",
     readOriginal: "Leggi l'articolo originale",
     emptyNews: "Aggiornamento notizie in corso...",
+    emptyReactions: "Aggiornamento reazioni in corso...",
     emptyComments: "Nessun commento presente.",
   }
 };
@@ -241,11 +247,11 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Player[]>([]);
   const [searching, setSearching] = useState(false);
-  const [activeTab, setActiveTab] = useState<"news" | "reactions" | "talk">("news");
+  const [activeTab, setActiveTab] = useState<"news" | "reactions" | "talk">("reactions");
   
   const [articles, setArticles] = useState<Article[]>([]);
   const [reactions, setReactions] = useState<Reaction[]>([]);
-  const [briefing, setBriefing] = useState<string[]>([]);
+  const [aiSummary, setAiSummary] = useState<string>("");
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -278,7 +284,7 @@ export default function Home() {
     fetchTrending();
   }, []);
 
-  // 2. 온디맨드 자동 등록 지원 스마트 검색
+  // 2. 스마트 검색창
   useEffect(() => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
@@ -301,25 +307,28 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // 3. 선택된 선수의 탭별 데이터 로드
+  // 3. 선택된 선수의 탭별 독립 데이터 로드
   useEffect(() => {
     if (!selectedPlayer) return;
     const fetchTabData = async () => {
       setLoading(true);
       try {
-        if (activeTab === "news") {
-          const res = await fetch(`${API_BASE}/api/players/${selectedPlayer.id}/feed?lang=${lang}`);
-          if (res.ok) setArticles(await res.json());
-        } else if (activeTab === "reactions") {
-          const res = await fetch(`${API_BASE}/api/players/${selectedPlayer.id}/reactions?lang=${lang}`);
-          if (res.ok) {
-            const data = await res.json();
-            setReactions(data.reactions || []);
-            setBriefing(data.briefing || []);
-          }
-        } else if (activeTab === "talk") {
-          const res = await fetch(`${API_BASE}/api/players/${selectedPlayer.id}/comments?lang=${lang}`);
-          if (res.ok) setComments(await res.json());
+        // 항상 탭 카운트 유지를 위해 reactions와 comments를 기본 동시 수집
+        const [feedRes, reactionsRes, commentsRes] = await Promise.all([
+          fetch(`${API_BASE}/api/players/${selectedPlayer.id}/feed?lang=${lang}`),
+          fetch(`${API_BASE}/api/players/${selectedPlayer.id}/reactions?lang=${lang}`),
+          fetch(`${API_BASE}/api/players/${selectedPlayer.id}/comments?lang=${lang}`)
+        ]);
+
+        if (feedRes.ok) setArticles(await feedRes.json());
+        if (reactionsRes.ok) {
+          const data = await reactionsRes.json();
+          setReactions(data.reactions || []);
+          setAiSummary(data.ai_summary || "");
+        }
+        if (commentsRes.ok) {
+          const data = await commentsRes.json();
+          setComments(data.comments || []);
         }
       } catch (err) {
         console.error("Tab fetch error:", err);
@@ -328,7 +337,7 @@ export default function Home() {
       }
     };
     fetchTabData();
-  }, [selectedPlayer, activeTab, lang]);
+  }, [selectedPlayer, lang]);
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -393,7 +402,7 @@ export default function Home() {
               <span>FootPulse</span>
             </h1>
             <span className="rounded bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300 border border-neutral-700">
-              v3.1 Trends & API
+              v3.2 Hub
             </span>
           </div>
           <p className="mt-1 text-xs text-neutral-400 font-normal">{t.hubTitle}</p>
@@ -447,8 +456,13 @@ export default function Home() {
                 className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left hover:bg-neutral-800 transition"
               >
                 <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-md overflow-hidden bg-neutral-800 border border-neutral-700 flex-shrink-0">
-                    <img src={player.photo_url} alt={player.name_ko} className="h-full w-full object-cover" />
+                  <div className="h-9 w-9 rounded-md overflow-hidden bg-neutral-800 border border-neutral-700 flex-shrink-0 flex items-center justify-center">
+                    <img 
+                      src={player.photo_url} 
+                      alt={player.name_ko} 
+                      className="h-full w-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).src = "https://media.api-sports.io/football/players/186.png"; }}
+                    />
                   </div>
                   <div>
                     <span className="font-semibold text-white text-sm">
@@ -498,16 +512,17 @@ export default function Home() {
         })}
       </div>
 
-      {/* 4. 선수 전용 허브 히어로 카드 (공식 고화질 CDN 사진) */}
+      {/* 4. 선수 전용 허브 히어로 카드 (공식 CDN 사진 전수 복구 완료) */}
       {selectedPlayer && (
         <div className="mb-6 rounded-lg bg-neutral-900 p-5 border border-neutral-800">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="relative h-20 w-20 rounded-md overflow-hidden border border-neutral-700 bg-neutral-800 flex-shrink-0 flex items-center justify-center">
                 <img
-                  src={selectedPlayer.photo_url || "https://r2.thesportsdb.com/images/media/player/cutout/m9n4ja1761512633.png"}
+                  src={selectedPlayer.photo_url || "https://media.api-sports.io/football/players/186.png"}
                   alt={selectedPlayer.name_ko}
                   className="h-full w-full object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).src = "https://media.api-sports.io/football/players/186.png"; }}
                 />
               </div>
               <div>
@@ -551,7 +566,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* 5. 선수 허브 3대 탭 */}
+      {/* 5. 선수 허브 3대 독립 탭 (카운트 뱃지 포함) */}
       <div className="mb-6 flex rounded-lg bg-neutral-900 p-1 border border-neutral-800">
         <button
           onClick={() => setActiveTab("news")}
@@ -560,8 +575,12 @@ export default function Home() {
           }`}
         >
           <Newspaper className="h-3.5 w-3.5" />
-          {t.tabNews}
+          <span>{t.tabNews}</span>
+          <span className="rounded-full bg-neutral-950 px-1.5 py-0.2 text-[10px] text-neutral-400 border border-neutral-800">
+            {articles.length}
+          </span>
         </button>
+
         <button
           onClick={() => setActiveTab("reactions")}
           className={`flex-1 flex items-center justify-center gap-2 rounded-md py-2 text-xs sm:text-sm font-semibold transition ${
@@ -569,8 +588,12 @@ export default function Home() {
           }`}
         >
           <Sparkles className="h-3.5 w-3.5" />
-          {t.tabReactions}
+          <span>{t.tabReactions}</span>
+          <span className="rounded-full bg-neutral-950 px-1.5 py-0.2 text-[10px] text-neutral-400 border border-neutral-800">
+            {reactions.length}
+          </span>
         </button>
+
         <button
           onClick={() => setActiveTab("talk")}
           className={`flex-1 flex items-center justify-center gap-2 rounded-md py-2 text-xs sm:text-sm font-semibold transition ${
@@ -578,11 +601,14 @@ export default function Home() {
           }`}
         >
           <MessageSquare className="h-3.5 w-3.5" />
-          {t.tabTalk}
+          <span>{t.tabTalk}</span>
+          <span className="rounded-full bg-neutral-950 px-1.5 py-0.2 text-[10px] text-neutral-400 border border-neutral-800">
+            {comments.length}
+          </span>
         </button>
       </div>
 
-      {/* 6. 탭별 콘텐츠 */}
+      {/* 6. 탭별 독립 콘텐츠 렌더링 */}
       {loading ? (
         <div className="py-16 text-center text-neutral-500">
           <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-neutral-400 border-t-transparent"></div>
@@ -641,59 +667,63 @@ export default function Home() {
             </div>
           )}
 
-          {/* [탭 2] 해외 핫 반응 (Reddit, X) + AI 여론 브리핑 */}
+          {/* [탭 2] 해외 현지 반응 (Reddit r/soccer, X 수집 데이터 전용) */}
           {activeTab === "reactions" && (
             <div className="space-y-4">
-              {/* 상단 AI 3줄 요약 카드 */}
-              {briefing.length > 0 && (
-                <div className="rounded-lg bg-neutral-900 p-4 border border-neutral-800">
-                  <div className="flex items-center gap-2 mb-2.5">
-                    <Sparkles className="h-4 w-4 text-neutral-400" />
-                    <h4 className="text-xs font-bold text-neutral-300">{t.aiBriefing}</h4>
+              {/* 동적 AI 핵심 요약: 텍스트가 존재할 때만 조건부 렌더링 (하드코딩 고정 텍스트 박멸) */}
+              {aiSummary && aiSummary.trim().length > 0 && (
+                <div className="rounded-lg bg-neutral-900 p-4 border border-emerald-900/60">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sparkles className="h-4 w-4 text-emerald-400" />
+                    <h4 className="text-xs font-bold text-emerald-300">{t.aiBriefing}</h4>
                   </div>
-                  <ul className="space-y-1.5 text-xs sm:text-sm text-neutral-300 list-disc list-inside font-normal">
-                    {briefing.map((line, idx) => (
-                      <li key={idx} className="leading-relaxed">{line}</li>
-                    ))}
-                  </ul>
+                  <p className="text-xs sm:text-sm text-neutral-200 leading-relaxed font-normal whitespace-pre-line">
+                    {aiSummary}
+                  </p>
                 </div>
               )}
 
-              {/* 해외 베스트 댓글 목록 */}
-              <div className="space-y-2.5">
-                {reactions.map((r) => (
-                  <div key={r.id} className="rounded-lg bg-neutral-900 p-4 border border-neutral-800">
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className="rounded bg-neutral-800 px-2 py-0.5 font-medium text-neutral-300 border border-neutral-700">
-                          {r.platform}
+              {/* 외부 수집 댓글 목록 (10~15개 이상) */}
+              {reactions.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-neutral-800 p-10 text-center text-neutral-400">
+                  <p className="text-sm font-normal">{t.emptyReactions}</p>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {reactions.map((r) => (
+                    <div key={r.id} className="rounded-lg bg-neutral-900 p-4 border border-neutral-800">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="rounded bg-orange-950/40 px-2 py-0.5 font-semibold text-orange-400 border border-orange-900/60">
+                            {r.platform}
+                          </span>
+                          <span className="text-neutral-400">{r.author_name || "현지 팬"}</span>
+                        </div>
+                        <span className="text-xs font-medium text-emerald-400">
+                          ▲ {r.upvotes.toLocaleString()} 추천
                         </span>
-                        <span className="text-neutral-400">{r.author_name || "현지 반응"}</span>
                       </div>
-                      <span className="text-xs font-medium text-neutral-400">
-                        ▲ {r.upvotes.toLocaleString()}
-                      </span>
-                    </div>
 
-                    <p className="text-sm font-medium text-neutral-100 mt-1 leading-relaxed">
-                      "{r.translated_text || r.original_text}"
-                    </p>
-
-                    {r.translated_text && (
-                      <p className="text-xs text-neutral-500 mt-1.5 font-normal">
-                        Original: "{r.original_text}"
+                      <p className="text-sm font-medium text-neutral-100 mt-1 leading-relaxed">
+                        "{r.translated_text || r.original_text}"
                       </p>
-                    )}
-                  </div>
-                ))}
-              </div>
+
+                      {r.translated_text && (
+                        <p className="text-xs text-neutral-500 mt-1.5 font-normal italic">
+                          Original: "{r.original_text}"
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
-          {/* [탭 3] 글로벌 토크 (다국적 교차 번역 커뮤니티) */}
+          {/* [탭 3] 글로벌 토크 (FootPulse 사이트 자체 유저 댓글 전용) */}
           {activeTab === "talk" && (
             <div className="space-y-5">
-              {/* 댓글 작성 폼 */}
+              {/* 유저 댓글 작성 폼 */}
               <form onSubmit={handleCommentSubmit} className="rounded-lg bg-neutral-900 p-4 border border-neutral-800">
                 <div className="flex items-center justify-between mb-2.5">
                   <h4 className="text-xs font-semibold text-neutral-300">{t.writeComment}</h4>
@@ -741,7 +771,7 @@ export default function Home() {
                 </div>
               </form>
 
-              {/* 글로벌 댓글 목록 */}
+              {/* 유저 댓글 목록 */}
               <div className="space-y-3">
                 {comments.length === 0 ? (
                   <div className="rounded-lg border border-dashed border-neutral-800 p-10 text-center text-neutral-400">
