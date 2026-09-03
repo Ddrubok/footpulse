@@ -7,9 +7,35 @@ import urllib.parse
 import html
 import re
 import sys
+import time
 
 sys.path.append("/sdcard/Download")
 import ingestion
+
+# IP 기반 도배 방지 인메모리 테이블 (10초 쿨다운)
+RATE_LIMITS = {}
+
+def get_client_ip():
+    return (
+        request.headers.get('CF-Connecting-IP') or
+        request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or
+        request.remote_addr or
+        'unknown'
+    )
+
+def check_rate_limit(client_ip: str, action: str = "comment", limit_sec: int = 10) -> bool:
+    """해당 IP의 마지막 요청이 limit_sec 이내이면 False(차단), 초과 시 True(허용)"""
+    now = time.time()
+    key = f"{client_ip}:{action}"
+    last_time = RATE_LIMITS.get(key, 0)
+    if len(RATE_LIMITS) > 1000:
+        for k in list(RATE_LIMITS.keys()):
+            if now - RATE_LIMITS[k] > 300:
+                del RATE_LIMITS[k]
+    if now - last_time < limit_sec:
+        return False
+    RATE_LIMITS[key] = now
+    return True
 
 app = Bottle()
 
@@ -54,32 +80,19 @@ def translate_comment(text: str, target_lang: str) -> str:
         pass
     return text
 
-def generate_player_sentiment_summary(player_name: str, comments: list) -> str:
-    """수집된 댓글이 3개 미만이면 천편일률적 문구를 띄우지 않고 빈 값 반환. 
-    3개 이상일 때 실제 수집 댓글에 기반한 팩트 중심 2줄 요약 생성"""
-    if not comments or len(comments) < 3:
-        return ""
-    
-    # 상위 3~5개 댓글의 구체적 키워드 추출 기반 요약
-    top_texts = [c.get('translated_text') or c.get('original_text', '') for c in comments[:5]]
-    sample = " / ".join(top_texts)
-    
-    # 팩트 기반 선수별 맞춤 요약문 생성
-    if "손흥민" in player_name or "Son" in player_name:
-        return "MLS LAFC 입단 이후 현지 유니폼 판매 및 경기 티켓 폭등에 대한 반응이 지배적이며, 특유의 양발 슈팅 파워와 토트넘 헌신에 대한 그리움이 함께 언급되고 있습니다."
-    elif "야말" in player_name or "Yamal" in player_name:
-        return "17세 나이에도 20대 베테랑 수준의 침착한 탈압박과 바르셀로나 보드진의 최고 수준 재계약 추진 소식이 현지 팬들의 가장 뜨거운 찬사를 이끌어내고 있습니다."
-    elif "이강인" in player_name or "Kang-in" in player_name:
-        return "시메오네 감독의 높은 압박 전술 속에서도 94%의 높은 패스 성공률과 창의적인 왼발 세트피스 킥 궤적이 현지 팬들 사이에서 집중 조명되고 있습니다."
-    elif "음바페" in player_name or "Mbapp" in player_name:
-        return "중앙 공격수 적응 논란을 딛고 5경기 연속 골을 기록 중인 폭발적 폼과 베르나베우에서의 갈락티코 영향력에 대해 호평이 이어지고 있습니다."
-    elif "홀란드" in player_name or "Haaland" in player_name:
-        return "EPL 역사상 최단 경기 100골 달성과 박스 안에서의 압도적인 결정력으로 '사이보그'라는 현지 팬들의 감탄이 주를 이루고 있습니다."
-    elif "김민재" in player_name or "Min-jae" in player_name:
-        return "콤파니 감독 체제에서 전진 수비 및 공중볼 경합 90% 이상 승리를 거두며 세리에 A MVP 시절의 압도적인 수비 폼을 되찾았다는 찬사가 많습니다."
-    else:
-        # 일반 선수의 경우 실제 수집된 상위 댓글 첫 문장 활용
-        return f"해외 현지 팬들은 최근 경기 영향력({top_texts[0][:40]}...)과 전술적 기여도에 높은 평가를 보내고 있습니다."
+def get_top_featured_quote(comments: list):
+    """실제 수집된 현지 반응 중 추천수(upvotes) 1위 코멘트를 인용구로 선정 (가짜 AI 요약 배제)"""
+    if not comments:
+        return None
+    sorted_comments = sorted(comments, key=lambda x: x.get('upvotes', 0), reverse=True)
+    top = sorted_comments[0]
+    return {
+        "text": top.get('translated_text') or top.get('original_text', ''),
+        "original_text": top.get('original_text', ''),
+        "author": top.get('author_name', '현지 팬'),
+        "platform": top.get('platform', 'Reddit'),
+        "upvotes": top.get('upvotes', 0)
+    }
 
 @app.route('/')
 def root():
@@ -251,12 +264,12 @@ def get_player_reactions(player_id):
                 d['created_at'] = str(d['created_at'])
             reactions.append(d)
 
-        # 3개 미만이면 천편일률적 문구 배제하고 빈 문자열 반환 (프론트에서 조건부 렌더링으로 박스 숨김)
-        ai_summary = generate_player_sentiment_summary(p_name, reactions)
+        # 실제 최다 추천 댓글을 베스트 토론 인용구로 선정 (AI 슬롭 배제)
+        featured_quote = get_top_featured_quote(reactions)
 
         return json.dumps({
             "reactions": reactions,
-            "ai_summary": ai_summary,
+            "featured_quote": featured_quote,
             "count": len(reactions)
         }, ensure_ascii=False)
     finally:
@@ -339,6 +352,15 @@ def post_player_comment(player_id):
     if not text:
         response.status = 400
         return json.dumps({"error": "Content is required"})
+
+    # IP 기반 10초 도배 방지 쿨다운 검사
+    client_ip = get_client_ip()
+    if not check_rate_limit(client_ip, action="comment", limit_sec=10):
+        response.status = 429
+        return json.dumps({
+            "error": "도배 방지를 위해 10초 후에 다시 작성하실 수 있습니다.",
+            "retry_after": 10
+        }, ensure_ascii=False)
 
     conn = get_db()
     try:

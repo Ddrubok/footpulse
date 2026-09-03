@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { 
   Search, Globe, Star, MessageSquare, Newspaper, 
-  Heart, ExternalLink, Activity, ArrowRight, Sparkles, Send, User
+  Heart, ExternalLink, Activity, ArrowRight, Send, User, Quote
 } from "lucide-react";
 
 interface Player {
@@ -41,6 +41,14 @@ interface Reaction {
   created_at: string;
 }
 
+interface FeaturedQuote {
+  text: string;
+  original_text?: string;
+  author: string;
+  platform: string;
+  upvotes: number;
+}
+
 interface Comment {
   id: string;
   player_id: string;
@@ -74,13 +82,13 @@ const I18N: Record<string, Record<string, string>> = {
   ko: {
     hubTitle: "전 세계 축구 팬들의 선수 토론 광장 & 글로벌 다국어 교차 번역 허브",
     searchPlaceholder: "선수 검색 (초성 ㅅㅎㅁ, Musiala, Guler, 바르셀로나, 뮌헨)...",
-    trending: "오늘의 트렌딩 스타:",
+    trending: "주목받는 선수:",
     tabNews: "뉴스 & 이적",
     tabReactions: "해외 현지 반응",
     tabTalk: "글로벌 토크",
-    favorite: "관심 선수 등록",
+    favorite: "관심 등록",
     favorited: "관심 선수",
-    aiBriefing: "해외 현지 여론 핵심 요약",
+    topQuote: "현지 베스트 반응",
     viewOriginal: "원문 확인",
     viewTranslated: "번역문 확인",
     translatedFrom: "로 번역됨",
@@ -89,9 +97,6 @@ const I18N: Record<string, Record<string, string>> = {
     postComment: "등록",
     nicknamePlaceholder: "닉네임",
     commentPlaceholder: "이 선수에 대한 의견이나 토론 메시지를 모국어로 자유롭게 남겨보세요...",
-    tier1: "Tier 1 공식 외신",
-    tier2: "Tier 2 전담 기자",
-    tier3: "Tier 3 이적 보도",
     readOriginal: "기사 원문 보기",
     emptyNews: "해당 선수의 최신 기사를 수집 동기화 중입니다.",
     emptyReactions: "수집된 해외 현지 반응을 동기화 중입니다.",
@@ -100,13 +105,13 @@ const I18N: Record<string, Record<string, string>> = {
   en: {
     hubTitle: "Global Football Player Debate Arena & Cross-Language Community",
     searchPlaceholder: "Search player (e.g., Son, Musiala, Guler, Barcelona, Bayern)...",
-    trending: "Trending Stars Today:",
+    trending: "Featured Players:",
     tabNews: "News & Transfers",
     tabReactions: "Global Reactions",
     tabTalk: "Global Talk",
-    favorite: "Track Player",
+    favorite: "Track",
     favorited: "Tracking",
-    aiBriefing: "Overseas Consensus Summary",
+    topQuote: "Top Consensus",
     viewOriginal: "View original",
     viewTranslated: "View translation",
     translatedFrom: "Translated to",
@@ -115,24 +120,21 @@ const I18N: Record<string, Record<string, string>> = {
     postComment: "Submit",
     nicknamePlaceholder: "Nickname",
     commentPlaceholder: "Share your debate or perspective on this player...",
-    tier1: "Tier 1 Official",
-    tier2: "Tier 2 Beat Reporter",
-    tier3: "Tier 3 Report",
     readOriginal: "Read source article",
     emptyNews: "Syncing verified football coverage for this player...",
     emptyReactions: "Syncing global fan reactions for this player...",
     emptyComments: "No community comments yet. Start the conversation.",
   },
   ja: {
-    hubTitle: "Googleトレンド連動 選手専用ハブ＆多言語コミュニティ",
+    hubTitle: "世界中のファンが集う選手討論アリーナ＆多言語コミュニティ",
     searchPlaceholder: "選手検索 (例: ソン・フンミン, ムシアラ, レアル, バルサ)...",
-    trending: "本日の急上昇選手:",
+    trending: "注目の選手:",
     tabNews: "ニュース＆移籍",
     tabReactions: "海外現地反応",
     tabTalk: "グローバルトーク",
     favorite: "お気に入り",
     favorited: "登録済み",
-    aiBriefing: "海外世論の核心要約",
+    topQuote: "現地の注目反応",
     viewOriginal: "原文を見る",
     viewTranslated: "翻訳を見る",
     translatedFrom: "に翻訳",
@@ -141,24 +143,21 @@ const I18N: Record<string, Record<string, string>> = {
     postComment: "投稿",
     nicknamePlaceholder: "ニックネーム",
     commentPlaceholder: "選手に関する意見を自由に投稿してください...",
-    tier1: "Tier 1 公式外信",
-    tier2: "Tier 2 担当記者",
-    tier3: "Tier 3 報道",
     readOriginal: "元記事を読む",
     emptyNews: "関連ニュースを同期中です...",
     emptyReactions: "海外反応を同期中です...",
     emptyComments: "コメントがありません。最初の意見を投稿しましょう。",
   },
   zh: {
-    hubTitle: "热搜驱动球员专属资讯中心与跨国球迷广场",
+    hubTitle: "全球球迷球员辩论广场与跨语言智能社区",
     searchPlaceholder: "搜索球员 (例如: 孙兴慜, 居莱尔, 穆西亚拉, 皇马, 拜仁)...",
-    trending: "今日热搜榜:",
+    trending: "热门关注球员:",
     tabNews: "新闻与转会",
     tabReactions: "海外热议",
     tabTalk: "全球对话",
     favorite: "关注球员",
     favorited: "已关注",
-    aiBriefing: "海外舆论核心速递",
+    topQuote: "海外焦点讨论",
     viewOriginal: "查看原文",
     viewTranslated: "查看翻译",
     translatedFrom: "已翻译为",
@@ -167,24 +166,21 @@ const I18N: Record<string, Record<string, string>> = {
     postComment: "发布",
     nicknamePlaceholder: "昵称",
     commentPlaceholder: "分享你对该球员的看法...",
-    tier1: "Tier 1 官方信源",
-    tier2: "Tier 2 跟队记者",
-    tier3: "Tier 3 媒体报道",
     readOriginal: "阅读原报道",
     emptyNews: "正在同步相关报道...",
     emptyReactions: "正在同步海外热议...",
     emptyComments: "暂无讨论，发表第一条评论吧。",
   },
   fr: {
-    hubTitle: "Hub Joueurs Football Tendance & Espace International",
+    hubTitle: "Arène Mondiale de Débat Football & Communauté Multilingue",
     searchPlaceholder: "Rechercher un joueur (ex: Yamal, Musiala, Son, Real)...",
-    trending: "Joueurs en tendance:",
+    trending: "Joueurs en vue:",
     tabNews: "Actualités & Transferts",
     tabReactions: "Avis Internationaux",
     tabTalk: "Discussion Globale",
     favorite: "Suivre",
     favorited: "Suivi",
-    aiBriefing: "Synthèse des avis internationaux",
+    topQuote: "Meilleure Réaction",
     viewOriginal: "Voir l'original",
     viewTranslated: "Voir la traduction",
     translatedFrom: "Traduit en",
@@ -193,24 +189,21 @@ const I18N: Record<string, Record<string, string>> = {
     postComment: "Publier",
     nicknamePlaceholder: "Pseudo",
     commentPlaceholder: "Partagez votre analyse sur ce joueur...",
-    tier1: "Tier 1 Source Officielle",
-    tier2: "Tier 2 Journaliste Spécialisé",
-    tier3: "Tier 3 Rumeur",
     readOriginal: "Lire la source",
     emptyNews: "Synchronisation des articles en cours...",
     emptyReactions: "Synchronisation des réactions...",
     emptyComments: "Aucun commentaire pour le moment.",
   },
   it: {
-    hubTitle: "Hub Calciatori Top Trend & Community Multilingue",
+    hubTitle: "Arena Globale di Discussione Calcio & Community Multilingue",
     searchPlaceholder: "Cerca calciatore (es: Yamal, Musiala, Son, Barcellona)...",
-    trending: "Top Calciatori del giorno:",
+    trending: "Calciatori in evidenza:",
     tabNews: "Notizie & Mercato",
     tabReactions: "Reazioni Estere",
     tabTalk: "Discussione Globale",
     favorite: "Segui",
     favorited: "Seguito",
-    aiBriefing: "Sintesi opinioni internazionali",
+    topQuote: "Reazione Top",
     viewOriginal: "Mostra originale",
     viewTranslated: "Mostra traduzione",
     translatedFrom: "Tradotto in",
@@ -219,9 +212,6 @@ const I18N: Record<string, Record<string, string>> = {
     postComment: "Invia",
     nicknamePlaceholder: "Nickname",
     commentPlaceholder: "Condividi la tua analisi su questo calciatore...",
-    tier1: "Tier 1 Fonte Ufficiale",
-    tier2: "Tier 2 Inviato Accreditato",
-    tier3: "Tier 3 Indiscrezione",
     readOriginal: "Leggi l'articolo originale",
     emptyNews: "Aggiornamento notizie in corso...",
     emptyReactions: "Aggiornamento reazioni in corso...",
@@ -253,7 +243,7 @@ export default function Home() {
   
   const [articles, setArticles] = useState<Article[]>([]);
   const [reactions, setReactions] = useState<Reaction[]>([]);
-  const [aiSummary, setAiSummary] = useState<string>("");
+  const [featuredQuote, setFeaturedQuote] = useState<FeaturedQuote | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -325,7 +315,7 @@ export default function Home() {
         if (reactionsRes.ok) {
           const data = await reactionsRes.json();
           setReactions(data.reactions || []);
-          setAiSummary(data.ai_summary || "");
+          setFeaturedQuote(data.featured_quote || null);
         }
         if (commentsRes.ok) {
           const data = await commentsRes.json();
@@ -356,6 +346,12 @@ export default function Home() {
           text: newCommentText.trim(),
         }),
       });
+
+      if (res.status === 429) {
+        alert("도배 방지를 위해 10초 후에 다시 작성하실 수 있습니다.");
+        return;
+      }
+
       if (res.ok) {
         const created: Comment = await res.json();
         setComments([created, ...comments]);
@@ -393,31 +389,29 @@ export default function Home() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8 text-neutral-100 antialiased font-sans">
-      {/* 1. 상단 글로벌 헤더 */}
-      <header className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-neutral-800 pb-5">
+    <div className="mx-auto max-w-3xl px-4 py-8 text-neutral-100 antialiased font-sans">
+      {/* 1. 상단 미니멀 헤더 */}
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-neutral-800 pb-4">
         <div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="h-6 w-6 text-emerald-500" />
-              <h1 className="text-2xl font-extrabold tracking-tight text-white">
-                Football Disputatio
-              </h1>
-            </div>
-            <span className="rounded bg-neutral-800 px-2.5 py-0.5 text-xs font-bold text-emerald-400 border border-neutral-700">
-              풋디 (FootDi)
+          <div className="flex items-center gap-2.5">
+            <MessageSquare className="h-5 w-5 text-neutral-300" />
+            <h1 className="text-xl font-bold tracking-tight text-white">
+              Football Disputatio
+            </h1>
+            <span className="text-xs font-semibold text-neutral-400">
+              풋디
             </span>
           </div>
           <p className="mt-1 text-xs text-neutral-400 font-normal">{t.hubTitle}</p>
         </div>
 
         {/* 6개 국어 언어 셀렉터 */}
-        <div className="flex items-center gap-2 rounded-md bg-neutral-900 px-2.5 py-1.5 border border-neutral-800">
-          <Globe className="h-4 w-4 text-neutral-400" />
+        <div className="flex items-center gap-1.5 rounded bg-neutral-900 px-2 py-1 border border-neutral-800">
+          <Globe className="h-3.5 w-3.5 text-neutral-400" />
           <select
             value={lang}
             onChange={(e) => setLang(e.target.value)}
-            className="bg-transparent text-xs font-semibold text-neutral-200 focus:outline-none cursor-pointer"
+            className="bg-transparent text-xs font-medium text-neutral-200 focus:outline-none cursor-pointer"
           >
             <option value="ko" className="bg-neutral-900">🇰🇷 한국어</option>
             <option value="en" className="bg-neutral-900">🇬🇧 English</option>
@@ -429,9 +423,9 @@ export default function Home() {
         </div>
       </header>
 
-      {/* 2. 스마트 검색창 (온디맨드 자동 등록 지원) */}
+      {/* 2. 스마트 검색창 */}
       <div className="relative mb-5">
-        <div className="flex items-center rounded-lg bg-neutral-900 px-3.5 py-2.5 border border-neutral-800 focus-within:border-neutral-600 transition">
+        <div className="flex items-center rounded-md bg-neutral-900 px-3 py-2 border border-neutral-800 focus-within:border-neutral-700 transition">
           <Search className="h-4 w-4 text-neutral-500 mr-2.5" />
           <input
             type="text"
@@ -447,7 +441,7 @@ export default function Home() {
 
         {/* 검색 드롭다운 결과 */}
         {searchResults.length > 0 && (
-          <div className="absolute z-30 mt-1.5 w-full rounded-lg bg-neutral-900 p-1.5 border border-neutral-700 shadow-lg max-h-80 overflow-y-auto">
+          <div className="absolute z-30 mt-1.5 w-full rounded-md bg-neutral-900 p-1 border border-neutral-700 shadow-xl max-h-80 overflow-y-auto">
             {searchResults.map((player) => (
               <button
                 key={player.id}
@@ -456,10 +450,10 @@ export default function Home() {
                   setSearchQuery("");
                   setSearchResults([]);
                 }}
-                className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left hover:bg-neutral-800 transition"
+                className="flex w-full items-center justify-between rounded px-3 py-2 text-left hover:bg-neutral-800 transition"
               >
                 <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-md overflow-hidden bg-neutral-800 border border-neutral-700 flex-shrink-0 flex items-center justify-center">
+                  <div className="h-8 w-8 rounded overflow-hidden bg-neutral-800 border border-neutral-700 flex-shrink-0 flex items-center justify-center">
                     <img 
                       src={player.photo_url || `/players/${player.id}.jpg`} 
                       alt={player.name_ko} 
@@ -477,23 +471,16 @@ export default function Home() {
                     </span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {player.trend_score ? (
-                    <span className="text-[11px] font-semibold text-neutral-400">
-                      Score {player.trend_score}
-                    </span>
-                  ) : null}
-                  <ArrowRight className="h-3.5 w-3.5 text-neutral-500" />
-                </div>
+                <ArrowRight className="h-3.5 w-3.5 text-neutral-500" />
               </button>
             ))}
           </div>
         )}
       </div>
 
-      {/* 3. 오늘 트렌딩 스타 랭킹 바 (Top 15) */}
-      <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-        <span className="text-xs font-semibold text-neutral-400 whitespace-nowrap mr-1 flex items-center gap-1">
+      {/* 3. 주목받는 선수 가로 목록 */}
+      <div className="mb-6 flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+        <span className="text-xs font-medium text-neutral-400 whitespace-nowrap mr-1">
           {t.trending}
         </span>
         {trendingPlayers.map((p, index) => {
@@ -502,13 +489,13 @@ export default function Home() {
             <button
               key={p.id}
               onClick={() => setSelectedPlayer(p)}
-              className={`rounded-md px-3 py-1 text-xs font-semibold whitespace-nowrap transition flex items-center gap-1.5 ${
+              className={`rounded px-2.5 py-1 text-xs font-medium whitespace-nowrap transition flex items-center gap-1.5 ${
                 isSelected
-                  ? "bg-neutral-100 text-neutral-900 border border-neutral-100"
-                  : "bg-neutral-900 text-neutral-300 hover:bg-neutral-800 border border-neutral-800"
+                  ? "bg-neutral-200 text-neutral-900"
+                  : "bg-neutral-900 text-neutral-300 hover:bg-neutral-800 border border-neutral-800/80"
               }`}
             >
-              <span className="text-[11px] font-bold text-neutral-400">{index + 1}.</span>
+              <span className="text-[11px] opacity-60">{index + 1}.</span>
               <span>{COUNTRY_FLAGS[p.nationality_code || ""] || "⚽"}</span>
               {p.name_ko}
             </button>
@@ -516,12 +503,12 @@ export default function Home() {
         })}
       </div>
 
-      {/* 4. 선수 전용 허브 히어로 카드 (자체 에지 CDN 사진 100% 로딩) */}
+      {/* 4. 선수 헤더 (군더더기 없는 에디토리얼 레이아웃) */}
       {selectedPlayer && (
-        <div className="mb-6 rounded-lg bg-neutral-900 p-5 border border-neutral-800">
+        <div className="mb-6 rounded-lg bg-neutral-900 p-4 sm:p-5 border border-neutral-800">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="relative h-20 w-20 rounded-md overflow-hidden border border-neutral-700 bg-neutral-800 flex-shrink-0 flex items-center justify-center">
+              <div className="relative h-16 w-16 sm:h-20 sm:w-20 rounded-md overflow-hidden border border-neutral-700 bg-neutral-800 flex-shrink-0 flex items-center justify-center">
                 <img
                   src={selectedPlayer.photo_url || `/players/${selectedPlayer.id}.jpg`}
                   alt={selectedPlayer.name_ko}
@@ -532,36 +519,29 @@ export default function Home() {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-xl sm:text-2xl font-extrabold text-white">{selectedPlayer.name_ko}</h2>
+                  <h2 className="text-xl sm:text-2xl font-bold text-white">{selectedPlayer.name_ko}</h2>
                   <span className="text-sm">{COUNTRY_FLAGS[selectedPlayer.nationality_code || ""] || "⚽"}</span>
                 </div>
-                <p className="text-xs font-normal text-neutral-400">{selectedPlayer.name_en}</p>
-                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                  <span className="rounded bg-neutral-800 px-2 py-0.5 font-semibold text-neutral-200 border border-neutral-700">
+                <p className="text-xs text-neutral-400">{selectedPlayer.name_en}</p>
+                <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-neutral-400">
+                  <span className="text-neutral-200 font-medium">
                     {selectedPlayer.current_club_name}
                   </span>
-                  <span className="rounded bg-neutral-800 px-2 py-0.5 font-normal text-neutral-300 border border-neutral-700">
-                    {selectedPlayer.position}
-                  </span>
-                  <span className="text-neutral-400 font-normal">
-                    {selectedPlayer.nationality}
-                  </span>
-                  {selectedPlayer.trend_score ? (
-                    <span className="rounded bg-neutral-800 px-1.5 py-0.5 text-[11px] font-semibold text-neutral-300 border border-neutral-700">
-                      Trend {selectedPlayer.trend_score}
-                    </span>
-                  ) : null}
+                  <span>·</span>
+                  <span>{selectedPlayer.position}</span>
+                  <span>·</span>
+                  <span>{selectedPlayer.nationality}</span>
                 </div>
               </div>
             </div>
 
-            {/* 관심 선수 등록 버튼 */}
+            {/* 관심 등록 버튼 */}
             <button
               onClick={() => toggleFavorite(selectedPlayer.id)}
-              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition border ${
+              className={`flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition border ${
                 favorites.includes(selectedPlayer.id)
                   ? "bg-neutral-800 text-amber-300 border-neutral-600"
-                  : "bg-neutral-800 text-neutral-300 hover:bg-neutral-700 border-neutral-700"
+                  : "bg-neutral-800/80 text-neutral-300 hover:bg-neutral-800 border-neutral-700"
               }`}
             >
               <Star className={`h-3.5 w-3.5 ${favorites.includes(selectedPlayer.id) ? "fill-amber-400 text-amber-400" : ""}`} />
@@ -571,61 +551,61 @@ export default function Home() {
         </div>
       )}
 
-      {/* 5. 선수 허브 3대 독립 탭 (카운트 뱃지 포함) */}
-      <div className="mb-6 flex rounded-lg bg-neutral-900 p-1 border border-neutral-800">
+      {/* 5. 3대 독립 탭 */}
+      <div className="mb-5 flex rounded-md bg-neutral-900 p-1 border border-neutral-800">
         <button
           onClick={() => setActiveTab("news")}
-          className={`flex-1 flex items-center justify-center gap-2 rounded-md py-2 text-xs sm:text-sm font-semibold transition ${
-            activeTab === "news" ? "bg-neutral-800 text-white border border-neutral-700" : "text-neutral-400 hover:text-neutral-200"
+          className={`flex-1 flex items-center justify-center gap-1.5 rounded py-1.5 text-xs sm:text-sm font-medium transition ${
+            activeTab === "news" ? "bg-neutral-800 text-white" : "text-neutral-400 hover:text-neutral-200"
           }`}
         >
           <Newspaper className="h-3.5 w-3.5" />
           <span>{t.tabNews}</span>
-          <span className="rounded-full bg-neutral-950 px-1.5 py-0.2 text-[10px] text-neutral-400 border border-neutral-800">
-            {articles.length}
+          <span className="text-[11px] text-neutral-500 font-normal">
+            ({articles.length})
           </span>
         </button>
 
         <button
           onClick={() => setActiveTab("reactions")}
-          className={`flex-1 flex items-center justify-center gap-2 rounded-md py-2 text-xs sm:text-sm font-semibold transition ${
-            activeTab === "reactions" ? "bg-neutral-800 text-white border border-neutral-700" : "text-neutral-400 hover:text-neutral-200"
+          className={`flex-1 flex items-center justify-center gap-1.5 rounded py-1.5 text-xs sm:text-sm font-medium transition ${
+            activeTab === "reactions" ? "bg-neutral-800 text-white" : "text-neutral-400 hover:text-neutral-200"
           }`}
         >
-          <Sparkles className="h-3.5 w-3.5" />
+          <Quote className="h-3.5 w-3.5" />
           <span>{t.tabReactions}</span>
-          <span className="rounded-full bg-neutral-950 px-1.5 py-0.2 text-[10px] text-neutral-400 border border-neutral-800">
-            {reactions.length}
+          <span className="text-[11px] text-neutral-500 font-normal">
+            ({reactions.length})
           </span>
         </button>
 
         <button
           onClick={() => setActiveTab("talk")}
-          className={`flex-1 flex items-center justify-center gap-2 rounded-md py-2 text-xs sm:text-sm font-semibold transition ${
-            activeTab === "talk" ? "bg-neutral-800 text-white border border-neutral-700" : "text-neutral-400 hover:text-neutral-200"
+          className={`flex-1 flex items-center justify-center gap-1.5 rounded py-1.5 text-xs sm:text-sm font-medium transition ${
+            activeTab === "talk" ? "bg-neutral-800 text-white" : "text-neutral-400 hover:text-neutral-200"
           }`}
         >
           <MessageSquare className="h-3.5 w-3.5" />
           <span>{t.tabTalk}</span>
-          <span className="rounded-full bg-neutral-950 px-1.5 py-0.2 text-[10px] text-neutral-400 border border-neutral-800">
-            {comments.length}
+          <span className="text-[11px] text-neutral-500 font-normal">
+            ({comments.length})
           </span>
         </button>
       </div>
 
-      {/* 6. 탭별 독립 콘텐츠 렌더링 */}
+      {/* 6. 탭별 콘텐츠 */}
       {loading ? (
         <div className="py-16 text-center text-neutral-500">
-          <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-neutral-400 border-t-transparent"></div>
+          <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-neutral-400 border-t-transparent"></div>
         </div>
       ) : (
         <div>
-          {/* [탭 1] 실시간 뉴스 & 이적 피드 */}
+          {/* [탭 1] 뉴스 & 이적 피드 (알약 뱃지 제거, 깔끔한 텍스트 위주) */}
           {activeTab === "news" && (
             <div className="space-y-3">
               {articles.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-neutral-800 p-10 text-center text-neutral-400">
-                  <p className="text-sm font-normal">{t.emptyNews}</p>
+                <div className="rounded border border-dashed border-neutral-800 p-8 text-center text-neutral-400">
+                  <p className="text-sm">{t.emptyNews}</p>
                 </div>
               ) : (
                 articles.map((article) => (
@@ -633,35 +613,33 @@ export default function Home() {
                     key={article.id}
                     className="rounded-lg bg-neutral-900 p-4 sm:p-5 border border-neutral-800 hover:border-neutral-700 transition"
                   >
-                    <div className="flex items-center justify-between gap-2 mb-2.5">
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className="rounded bg-neutral-800 px-2 py-0.5 font-medium text-neutral-300 border border-neutral-700">
-                          {article.tier === 1 ? t.tier1 : article.tier === 2 ? t.tier2 : t.tier3}
-                        </span>
-                        <span className="rounded bg-neutral-800 px-2 py-0.5 text-[11px] font-semibold text-neutral-300 border border-neutral-700">
-                          {article.transfer_status || "REPORT"}
-                        </span>
-                        <span className="text-neutral-400">{article.source_name}</span>
+                    <div className="flex items-center justify-between text-xs text-neutral-400 mb-2">
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <span className="text-neutral-200">{article.source_name}</span>
+                        <span>·</span>
+                        <span>Tier {article.tier}</span>
+                        <span>·</span>
+                        <span className="text-neutral-400">{article.transfer_status || "REPORT"}</span>
                       </div>
-                      <span className="text-xs text-neutral-500">
+                      <span className="text-neutral-500">
                         {article.published_at ? new Date(article.published_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }) : "최신"}
                       </span>
                     </div>
 
-                    <h3 className="text-base font-bold text-white mb-2 leading-snug">
+                    <h3 className="text-base font-semibold text-white mb-2 leading-snug">
                       {stripHtml(article.title)}
                     </h3>
 
-                    <p className="text-sm text-neutral-300 leading-relaxed bg-neutral-950/60 p-3 rounded border border-neutral-800/80 font-normal">
+                    <p className="text-sm text-neutral-300 leading-relaxed font-normal">
                       {stripHtml(article.summary)}
                     </p>
 
-                    <div className="mt-3 flex justify-end border-t border-neutral-800/80 pt-2.5">
+                    <div className="mt-3 flex justify-end border-t border-neutral-800 pt-2">
                       <a
                         href={article.source_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs font-medium text-neutral-300 hover:text-white transition"
+                        className="inline-flex items-center gap-1 text-xs font-medium text-neutral-400 hover:text-white transition"
                       >
                         {t.readOriginal} <ExternalLink className="h-3 w-3" />
                       </a>
@@ -672,40 +650,46 @@ export default function Home() {
             </div>
           )}
 
-          {/* [탭 2] 해외 현지 반응 (Reddit r/soccer, X 수집 데이터 전용) */}
+          {/* [탭 2] 해외 현지 반응 (AI 요약 박스 제거 -> 실제 최다 추천 베스트 인용구) */}
           {activeTab === "reactions" && (
             <div className="space-y-4">
-              {/* 동적 AI 핵심 요약: 텍스트가 존재할 때만 조건부 렌더링 */}
-              {aiSummary && aiSummary.trim().length > 0 && (
-                <div className="rounded-lg bg-neutral-900 p-4 border border-emerald-900/60">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Sparkles className="h-4 w-4 text-emerald-400" />
-                    <h4 className="text-xs font-bold text-emerald-300">{t.aiBriefing}</h4>
+              {/* 실제 현지 최다 추천 코멘트 하이라이트 (AI 가짜 문구 배제) */}
+              {featuredQuote && (
+                <div className="rounded-lg border-l-2 border-emerald-500 bg-neutral-900 p-4 border border-y-0 border-r-0">
+                  <div className="flex items-center justify-between text-xs text-neutral-400 mb-2">
+                    <span className="font-semibold text-emerald-400 flex items-center gap-1">
+                      <Quote className="h-3 w-3" /> {t.topQuote}
+                    </span>
+                    <span>{featuredQuote.platform} · ▲ {featuredQuote.upvotes.toLocaleString()} 추천</span>
                   </div>
-                  <p className="text-xs sm:text-sm text-neutral-200 leading-relaxed font-normal whitespace-pre-line">
-                    {aiSummary}
+                  <p className="text-sm font-medium text-neutral-100 leading-relaxed italic">
+                    "{featuredQuote.text}"
                   </p>
+                  {featuredQuote.original_text && featuredQuote.original_text !== featuredQuote.text && (
+                    <p className="mt-1.5 text-xs text-neutral-500 font-normal">
+                      Original: "{featuredQuote.original_text}"
+                    </p>
+                  )}
                 </div>
               )}
 
               {/* 외부 수집 댓글 목록 */}
               {reactions.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-neutral-800 p-10 text-center text-neutral-400">
-                  <p className="text-sm font-normal">{t.emptyReactions}</p>
+                <div className="rounded border border-dashed border-neutral-800 p-8 text-center text-neutral-400">
+                  <p className="text-sm">{t.emptyReactions}</p>
                 </div>
               ) : (
                 <div className="space-y-2.5">
                   {reactions.map((r) => (
                     <div key={r.id} className="rounded-lg bg-neutral-900 p-4 border border-neutral-800">
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <div className="flex items-center gap-2 text-xs">
-                          <span className="rounded bg-orange-950/40 px-2 py-0.5 font-semibold text-orange-400 border border-orange-900/60">
-                            {r.platform}
-                          </span>
-                          <span className="text-neutral-400">{r.author_name || "현지 팬"}</span>
+                      <div className="flex items-center justify-between text-xs text-neutral-400 mb-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-semibold text-neutral-300">{r.platform}</span>
+                          <span>·</span>
+                          <span>{r.author_name || "현지 팬"}</span>
                         </div>
-                        <span className="text-xs font-medium text-emerald-400">
-                          ▲ {r.upvotes.toLocaleString()} 추천
+                        <span className="font-medium text-emerald-400">
+                          ▲ {r.upvotes.toLocaleString()}
                         </span>
                       </div>
 
@@ -714,7 +698,7 @@ export default function Home() {
                       </p>
 
                       {r.translated_text && (
-                        <p className="text-xs text-neutral-500 mt-1.5 font-normal italic">
+                        <p className="text-xs text-neutral-500 mt-1 font-normal italic">
                           Original: "{r.original_text}"
                         </p>
                       )}
@@ -725,13 +709,13 @@ export default function Home() {
             </div>
           )}
 
-          {/* [탭 3] 글로벌 토크 (FootPulse 사이트 자체 유저 댓글 전용) */}
+          {/* [탭 3] 글로벌 토크 (10초 쿨다운 도배 방지 적용) */}
           {activeTab === "talk" && (
-            <div className="space-y-5">
+            <div className="space-y-4">
               {/* 유저 댓글 작성 폼 */}
               <form onSubmit={handleCommentSubmit} className="rounded-lg bg-neutral-900 p-4 border border-neutral-800">
                 <div className="flex items-center justify-between mb-2.5">
-                  <h4 className="text-xs font-semibold text-neutral-300">{t.writeComment}</h4>
+                  <h4 className="text-xs font-medium text-neutral-300">{t.writeComment}</h4>
                   <div className="flex items-center gap-2">
                     <select
                       value={authorCountry}
@@ -761,14 +745,14 @@ export default function Home() {
                   value={newCommentText}
                   onChange={(e) => setNewCommentText(e.target.value)}
                   placeholder={t.commentPlaceholder}
-                  className="w-full rounded bg-neutral-950 p-2.5 text-sm text-white placeholder-neutral-500 border border-neutral-800 focus:border-neutral-600 focus:outline-none transition"
+                  className="w-full rounded bg-neutral-950 p-2.5 text-sm text-white placeholder-neutral-500 border border-neutral-800 focus:border-neutral-700 focus:outline-none transition"
                 />
 
-                <div className="mt-2.5 flex justify-end">
+                <div className="mt-2 flex justify-end">
                   <button
                     type="submit"
                     disabled={submittingComment || !newCommentText.trim()}
-                    className="flex items-center gap-1.5 rounded bg-neutral-100 px-4 py-1.5 text-xs font-bold text-neutral-900 hover:bg-white disabled:opacity-40 transition"
+                    className="flex items-center gap-1.5 rounded bg-neutral-100 px-3.5 py-1 text-xs font-semibold text-neutral-900 hover:bg-white disabled:opacity-40 transition"
                   >
                     <Send className="h-3 w-3" />
                     {submittingComment ? "..." : t.postComment}
@@ -777,10 +761,10 @@ export default function Home() {
               </form>
 
               {/* 유저 댓글 목록 */}
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {comments.length === 0 ? (
-                  <div className="rounded-lg border border-dashed border-neutral-800 p-10 text-center text-neutral-400">
-                    <p className="text-sm font-normal">{t.emptyComments}</p>
+                  <div className="rounded border border-dashed border-neutral-800 p-8 text-center text-neutral-400">
+                    <p className="text-sm">{t.emptyComments}</p>
                   </div>
                 ) : (
                   comments.map((c) => {
@@ -790,19 +774,19 @@ export default function Home() {
 
                     return (
                       <div key={c.id} className="rounded-lg bg-neutral-900 p-4 border border-neutral-800">
-                        <div className="flex items-center justify-between gap-2 mb-2">
+                        <div className="flex items-center justify-between text-xs mb-1.5">
                           <div className="flex items-center gap-2">
-                            <span className="text-base">{flag}</span>
-                            <span className="text-sm font-semibold text-white">{c.author_name}</span>
-                            <span className="text-xs text-neutral-500">
+                            <span className="text-sm">{flag}</span>
+                            <span className="font-semibold text-white">{c.author_name}</span>
+                            <span className="text-neutral-500">
                               {new Date(c.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}
                             </span>
                           </div>
                           <button
                             onClick={() => handleLike(c.id)}
-                            className="flex items-center gap-1 rounded bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300 hover:text-red-400 transition border border-neutral-700"
+                            className="flex items-center gap-1 rounded px-2 py-0.5 text-xs text-neutral-400 hover:text-red-400 transition"
                           >
-                            <Heart className="h-3 w-3 text-neutral-400 hover:text-red-400" />
+                            <Heart className="h-3 w-3" />
                             {c.likes_count}
                           </button>
                         </div>
@@ -814,13 +798,13 @@ export default function Home() {
 
                         {/* 번역 메타 정보 및 원문 토글 */}
                         {c.is_translated && (
-                          <div className="mt-2.5 flex items-center justify-between border-t border-neutral-800/80 pt-2 text-xs">
-                            <span className="text-neutral-500 font-normal">
+                          <div className="mt-2 flex items-center justify-between border-t border-neutral-800 pt-1.5 text-xs">
+                            <span className="text-neutral-500">
                               {LANG_NAMES[lang]} {t.translatedFrom} ({t.originalLang}: {srcLangName})
                             </span>
                             <button
                               onClick={() => toggleOriginal(c.id)}
-                              className="font-medium text-neutral-400 hover:text-neutral-200 underline transition"
+                              className="text-neutral-400 hover:text-neutral-200 underline transition"
                             >
                               {isShowingOriginal ? t.viewTranslated : t.viewOriginal}
                             </button>
@@ -835,6 +819,19 @@ export default function Home() {
           )}
         </div>
       )}
+
+      {/* 7. 법적 보호 및 커뮤니티 투명성 푸터 */}
+      <footer className="mt-12 border-t border-neutral-800 pt-6 pb-10 text-center text-xs text-neutral-500 font-normal space-y-1">
+        <p className="font-medium text-neutral-400">
+          Football Disputatio (풋디) · 전 세계 축구 팬들을 위한 독립 토론 광장
+        </p>
+        <p>
+          본 플랫폼은 공익적 보도·비평 및 축구 팬 상호 의견 교류를 위한 독립 커뮤니티입니다.
+        </p>
+        <p className="text-neutral-600">
+          권리 침해 신고 및 제휴 문의: contact@footdi.app · All player names & trademarks belong to their respective owners.
+        </p>
+      </footer>
     </div>
   );
 }
