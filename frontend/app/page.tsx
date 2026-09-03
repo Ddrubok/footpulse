@@ -1,16 +1,22 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Globe, Shield, ExternalLink, Activity, X, Sparkles, Filter } from "lucide-react";
+import { 
+  Search, Globe, Star, Flame, MessageSquare, Newspaper, 
+  Share2, Heart, ExternalLink, Activity, ArrowRight, Check, Sparkles, RefreshCw, Send, ChevronDown
+} from "lucide-react";
 
-interface Club {
-  id?: string;
-  club_id?: string;
-  name_ko?: string;
-  name_en?: string;
-  league?: string;
-  country?: string;
-  role?: string;
+interface Player {
+  id: string;
+  name_ko: string;
+  name_en: string;
+  aliases?: string[];
+  current_club_id?: string;
+  current_club_name?: string;
+  nationality?: string;
+  nationality_code?: string;
+  position?: string;
+  photo_url?: string;
 }
 
 interface Article {
@@ -19,16 +25,205 @@ interface Article {
   source_url: string;
   tier: number;
   transfer_status: string;
-  player_name?: string;
   published_at: string;
   title: string;
   summary: string;
-  mentioned_clubs?: Club[];
+}
+
+interface Reaction {
+  id: string;
+  platform: string;
+  author_name?: string;
+  original_text: string;
+  translated_text?: string;
+  upvotes: number;
+  created_at: string;
+}
+
+interface Comment {
+  id: string;
+  player_id: string;
+  author_name: string;
+  author_country: string;
+  source_lang: string;
+  original_text: string;
+  display_text: string;
+  is_translated: boolean;
+  likes_count: number;
+  created_at: string;
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://tired-east-small-years.trycloudflare.com";
 
-// HTML 태그 및 엔티티 완전 정제 헬퍼
+const COUNTRY_FLAGS: Record<string, string> = {
+  KR: "🇰🇷", ES: "🇪🇸", GB: "🇬🇧", US: "🇺🇸", FR: "🇫🇷",
+  IT: "🇮🇹", JP: "🇯🇵", BR: "🇧🇷", NO: "🇳🇴", EG: "🇪🇬", DE: "🇩🇪"
+};
+
+const LANG_NAMES: Record<string, string> = {
+  ko: "한국어", es: "Español", en: "English", ja: "日本語",
+  zh: "简体中文", fr: "Français", it: "Italiano"
+};
+
+const I18N: Record<string, Record<string, string>> = {
+  ko: {
+    hubTitle: "선수 전용 허브 & 글로벌 크로스 번역 광장",
+    searchPlaceholder: "선수 검색 (초성 ㅅㅎㅁ, Son, Yamal, 바르셀로나, LAFC)...",
+    trending: "🔥 지금 핫한 스타:",
+    tabNews: "뉴스 & 이적 피드",
+    tabReactions: "해외 핫 반응",
+    tabTalk: "글로벌 토크 💬",
+    favorite: "즐겨찾기",
+    favorited: "즐겨찾는 선수",
+    aiBriefing: "AI 해외 여론 3줄 브리핑",
+    viewOriginal: "원문 보기",
+    viewTranslated: "번역문 보기",
+    translatedFrom: "로 번역됨",
+    originalLang: "원문",
+    writeComment: "전 세계 팬들과 나만의 언어로 소통해보세요",
+    postComment: "댓글 등록",
+    nicknamePlaceholder: "닉네임",
+    commentPlaceholder: "선수에 대한 생각이나 응원 메시지를 자유롭게 남겨보세요...",
+    like: "좋아요",
+    tier1: "🟢 Tier 1 오피셜/외신",
+    tier2: "🟡 Tier 2 전담기자",
+    tier3: "⚪ Tier 3 루머",
+    readOriginal: "원문 읽기",
+    emptyNews: "해당 선수의 최신 기사를 수집 동기화 중입니다.",
+    emptyComments: "첫 번째 글로벌 팬 코멘트를 남겨보세요!",
+  },
+  en: {
+    hubTitle: "Global Player Hub & Real-time Cross-Translation Community",
+    searchPlaceholder: "Search player (e.g., Son, Yamal, Barcelona, LAFC)...",
+    trending: "🔥 Trending Stars:",
+    tabNews: "News & Transfers",
+    tabReactions: "Global Reactions",
+    tabTalk: "Global Talk 💬",
+    favorite: "Favorite",
+    favorited: "Favorited",
+    aiBriefing: "AI Consensus 3-Line Briefing",
+    viewOriginal: "View Original",
+    viewTranslated: "View Translation",
+    translatedFrom: "Translated to",
+    originalLang: "Original",
+    writeComment: "Talk with global fans in your own language",
+    postComment: "Post Comment",
+    nicknamePlaceholder: "Nickname",
+    commentPlaceholder: "Share your thoughts or messages for this player...",
+    like: "Like",
+    tier1: "🟢 Tier 1 Official/Major",
+    tier2: "🟡 Tier 2 Verified Source",
+    tier3: "⚪ Tier 3 Rumor",
+    readOriginal: "Read Original",
+    emptyNews: "Syncing latest football articles for this player...",
+    emptyComments: "Be the first to leave a comment!",
+  },
+  ja: {
+    hubTitle: "選手専用ハブ＆リアルタイム交差翻訳コミュニティ",
+    searchPlaceholder: "選手検索 (例: ソン・フンミン, ヤマル, バルセロナ)...",
+    trending: "🔥 話題のスター選手:",
+    tabNews: "ニュース＆移籍",
+    tabReactions: "海外ホット反応",
+    tabTalk: "グローバルトーク 💬",
+    favorite: "お気に入り",
+    favorited: "登録済み",
+    aiBriefing: "AI海外世論3行要約",
+    viewOriginal: "原文を表示",
+    viewTranslated: "翻訳を表示",
+    translatedFrom: "に翻訳されました",
+    originalLang: "原文",
+    writeComment: "世界中のファンと自分の言語で語り合いましょう",
+    postComment: "コメント投稿",
+    nicknamePlaceholder: "ニックネーム",
+    commentPlaceholder: "選手への応援や感想を自由に投稿してください...",
+    like: "いいね",
+    tier1: "🟢 Tier 1 公式・有力外信",
+    tier2: "🟡 Tier 2 有力筋",
+    tier3: "⚪ Tier 3 噂・メディア",
+    readOriginal: "原文を読む",
+    emptyNews: "最新ニュースを同期中です...",
+    emptyComments: "最初のコメントを投稿してみましょう！",
+  },
+  zh: {
+    hubTitle: "球员专属中心与实时跨国交友广场",
+    searchPlaceholder: "搜索球员 (例如: 孙兴慜, 亚马尔, 巴萨, 皇马)...",
+    trending: "🔥 热门球星:",
+    tabNews: "新闻与转会",
+    tabReactions: "海外热议",
+    tabTalk: "全球对话 💬",
+    favorite: "关注",
+    favorited: "已关注",
+    aiBriefing: "AI海外舆情3行速递",
+    viewOriginal: "查看原文",
+    viewTranslated: "查看翻译",
+    translatedFrom: "已翻译为",
+    originalLang: "原文",
+    writeComment: "用你自己的母语与全球球迷无障碍交流",
+    postComment: "发表评论",
+    nicknamePlaceholder: "昵称",
+    commentPlaceholder: "自由分享你对这位球员的看法或支持...",
+    like: "点赞",
+    tier1: "🟢 Tier 1 官方/权威",
+    tier2: "🟡 Tier 2 随队跟进",
+    tier3: "⚪ Tier 3 转会传闻",
+    readOriginal: "阅读原文",
+    emptyNews: "正在同步最新相关资讯...",
+    emptyComments: "留下第一条全球评论吧！",
+  },
+  fr: {
+    hubTitle: "Hub Joueurs & Communauté de Traduction Croisée en Direct",
+    searchPlaceholder: "Rechercher un joueur (ex: Yamal, Mbappé, Son, Real)...",
+    trending: "🔥 Joueurs du moment:",
+    tabNews: "Actus & Transferts",
+    tabReactions: "Réactions Globales",
+    tabTalk: "Global Talk 💬",
+    favorite: "Favoris",
+    favorited: "Favori ajouté",
+    aiBriefing: "Synthèse IA des avis internationaux",
+    viewOriginal: "Voir l'original",
+    viewTranslated: "Voir la traduction",
+    translatedFrom: "Traduit en",
+    originalLang: "Original",
+    writeComment: "Échangez avec les fans du monde entier dans votre langue",
+    postComment: "Publier",
+    nicknamePlaceholder: "Pseudo",
+    commentPlaceholder: "Partagez votre avis sur ce joueur...",
+    like: "J'aime",
+    tier1: "🟢 Tier 1 Officiel / Fiable",
+    tier2: "🟡 Tier 2 Journaliste dédié",
+    tier3: "⚪ Tier 3 Rumeur",
+    readOriginal: "Lire l'original",
+    emptyNews: "Synchronisation des actualités en cours...",
+    emptyComments: "Soyez le premier à commenter !",
+  },
+  it: {
+    hubTitle: "Hub Calciatori & Community con Traduzione Incrociata in Tempo Reale",
+    searchPlaceholder: "Cerca calciatore (es: Yamal, Son, Mbappé, Barcellona)...",
+    trending: "🔥 Stelle del momento:",
+    tabNews: "Notizie & Calciomercato",
+    tabReactions: "Reazioni dall'Estero",
+    tabTalk: "Global Talk 💬",
+    favorite: "Preferito",
+    favorited: "Aggiunto ai preferiti",
+    aiBriefing: "Briefing IA sulle opinioni internazionali",
+    viewOriginal: "Mostra originale",
+    viewTranslated: "Mostra traduzione",
+    translatedFrom: "Tradotto in",
+    originalLang: "Originale",
+    writeComment: "Comunica con tifosi di tutto il mondo nella tua lingua",
+    postComment: "Invia commento",
+    nicknamePlaceholder: "Nickname",
+    commentPlaceholder: "Condividi un pensiero o un messaggio per questo giocatore...",
+    like: "Mi piace",
+    tier1: "🟢 Tier 1 Ufficiale",
+    tier2: "🟡 Tier 2 Fonti attendibili",
+    tier3: "⚪ Tier 3 Indiscrezione",
+    readOriginal: "Leggi l'originale",
+    emptyNews: "Sincronizzazione notizie in corso...",
+    emptyComments: "Lascia il primo commento globale!",
+  }
+};
+
 const stripHtml = (str?: string) => {
   if (!str) return "";
   return str
@@ -42,142 +237,55 @@ const stripHtml = (str?: string) => {
     .trim();
 };
 
-// 다국어 UI 텍스트 사전
-const I18N: Record<string, Record<string, string>> = {
-  ko: {
-    subtitle: "전 세계 구단 교차 분석 및 실시간 축구 뉴스·이적 피드",
-    searchPlaceholder: "구단 검색 (예: LAFC, 토트넘, 아틀레티코, 맨시티, 초성 ㅁㅅㅌ)...",
-    quickClubs: "추천 구단:",
-    filterActive: "교차 필터 적용 중:",
-    reset: "초기화",
-    loading: "실시간 축구 피드 로딩 중...",
-    empty: "선택된 구단 조건에 일치하는 최신 축구 기사가 없습니다.",
-    emptySub: "외신 수집기(collector.py)가 계속해서 최신 축구 뉴스를 동기화하고 있습니다.",
-    readOriginal: "원문 읽기",
-    tier1: "🟢 Tier 1 오피셜/외신",
-    tier2: "🟡 Tier 2 전담기자",
-    tier3: "⚪ Tier 3 루머",
-    talks: "협상 중 (TALKS)",
-    nodeActive: "S21U 엣지 노드 가동 중"
-  },
-  en: {
-    subtitle: "Global Football Club Cross-Analysis & Real-time Transfer Feed",
-    searchPlaceholder: "Search club (e.g., LAFC, Tottenham, Atletico, Man City)...",
-    quickClubs: "Top Clubs:",
-    filterActive: "Active Filters:",
-    reset: "Reset",
-    loading: "Loading real-time football feed...",
-    empty: "No matching football articles found for the selected clubs.",
-    emptySub: "The automated football collector is syncing live news 24/7.",
-    readOriginal: "Read Original",
-    tier1: "🟢 Tier 1 Official/Major",
-    tier2: "🟡 Tier 2 Verified Reporter",
-    tier3: "⚪ Tier 3 Rumor",
-    talks: "In Talks",
-    nodeActive: "S21U Edge Node Active"
-  },
-  ja: {
-    subtitle: "世界中のサッカークラブ交差分析＆リアルタイム移籍速報フィード",
-    searchPlaceholder: "クラブ検索 (例: LAFC, トッテナム, アトレティコ, マンC)...",
-    quickClubs: "おすすめクラブ:",
-    filterActive: "適用中のフィルター:",
-    reset: "リセット",
-    loading: "サッカーフィードを読み込み中...",
-    empty: "選択されたクラブの最新サッカーニュースがありません。",
-    emptySub: "最新の移籍情報が定期的に自動収集されています。",
-    readOriginal: "原文を読む",
-    tier1: "🟢 Tier 1 公式・有力外信",
-    tier2: "🟡 Tier 2 番記者・有力筋",
-    tier3: "⚪ Tier 3 噂・メディア",
-    talks: "交渉中 (TALKS)",
-    nodeActive: "S21U ノード稼働中"
-  },
-  zh: {
-    subtitle: "全球足球俱乐部交叉分析与实时转会资讯流",
-    searchPlaceholder: "搜索俱乐部 (例如: LAFC, 热刺, 马竞, 曼城)...",
-    quickClubs: "推荐俱乐部:",
-    filterActive: "生效过滤器:",
-    reset: "重置",
-    loading: "正在加载实时足球资讯...",
-    empty: "未找到符合所选俱乐部条件的最新足球文章。",
-    emptySub: "实时足球资讯收集引擎正在持续同步最新消息。",
-    readOriginal: "阅读原文",
-    tier1: "🟢 Tier 1 官方/权威外媒",
-    tier2: "🟡 Tier 2 随队记者",
-    tier3: "⚪ Tier 3 转会传闻",
-    talks: "谈判中 (TALKS)",
-    nodeActive: "S21U 节点运行中"
-  },
-  fr: {
-    subtitle: "Analyse croisée des clubs et flux de transferts de football en direct",
-    searchPlaceholder: "Rechercher un club (ex: LAFC, Tottenham, Atletico, Man City)...",
-    quickClubs: "Clubs populaires:",
-    filterActive: "Filtres actifs:",
-    reset: "Réinitialiser",
-    loading: "Chargement du flux football...",
-    empty: "Aucun article de football trouvé pour les clubs sélectionnés.",
-    emptySub: "Le collecteur synchronise les actualités en continu.",
-    readOriginal: "Lire l'original",
-    tier1: "🟢 Tier 1 Officiel / Fiable",
-    tier2: "🟡 Tier 2 Journaliste dédié",
-    tier3: "⚪ Tier 3 Rumeur",
-    talks: "Négociations en cours",
-    nodeActive: "Noeud Edge S21U Actif"
-  },
-  it: {
-    subtitle: "Analisi incrociata dei club e feed di calciomercato in tempo reale",
-    searchPlaceholder: "Cerca club (es: LAFC, Tottenham, Atletico, Man City)...",
-    quickClubs: "Club consigliati:",
-    filterActive: "Filtri attivi:",
-    reset: "Ripristina",
-    loading: "Caricamento notizie di calcio...",
-    empty: "Nessun articolo trovato per i club selezionati.",
-    emptySub: "Il collettore aggiorna continuamente le ultime notizie.",
-    readOriginal: "Leggi l'originale",
-    tier1: "🟢 Tier 1 Ufficiale / Primario",
-    tier2: "🟡 Tier 2 Giornalista accreditato",
-    tier3: "⚪ Tier 3 Indiscrezione",
-    talks: "In trattativa",
-    nodeActive: "Nodo Edge S21U Attivo"
-  },
-  es: {
-    subtitle: "Análisis cruzado de clubes y noticias de fichajes de fútbol en tiempo real",
-    searchPlaceholder: "Buscar club (ej: LAFC, Tottenham, Atlético, Man City)...",
-    quickClubs: "Clubes sugeridos:",
-    filterActive: "Filtros activos:",
-    reset: "Restablecer",
-    loading: "Cargando noticias de fútbol...",
-    empty: "No hay artículos para los clubes seleccionados.",
-    emptySub: "El recopilador sincroniza noticias en vivo 24/7.",
-    readOriginal: "Leer original",
-    tier1: "🟢 Tier 1 Oficial / Noticia clave",
-    tier2: "🟡 Tier 2 Periodista especializado",
-    tier3: "⚪ Tier 3 Rumor",
-    talks: "Negociaciones en curso",
-    nodeActive: "Nodo Edge S21U Activo"
-  }
-};
-
 export default function Home() {
-  const [selectedClubs, setSelectedClubs] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Club[]>([]);
-  const [articles, setArticles] = useState<Article[]>([]);
-  const [loading, setLoading] = useState(false);
   const [lang, setLang] = useState("ko");
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Player[]>([]);
+  const [activeTab, setActiveTab] = useState<"news" | "reactions" | "talk">("news");
+  
+  // 탭별 데이터 상태
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [reactions, setReactions] = useState<Reaction[]>([]);
+  const [briefing, setBriefing] = useState<string[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // 댓글 작성 폼 상태
+  const [authorName, setAuthorName] = useState("");
+  const [authorCountry, setAuthorCountry] = useState("KR");
+  const [newCommentText, setNewCommentText] = useState("");
+  const [submittingComment, setSubmittingComment] = useState(false);
+
+  // 원문 토글 상태 관리: commentId -> boolean
+  const [showOriginalMap, setShowOriginalMap] = useState<Record<string, boolean>>({});
+
+  // 즐겨찾기 상태
+  const [favorites, setFavorites] = useState<string[]>([]);
 
   const t = I18N[lang] || I18N.ko;
 
-  const quickClubs = [
-    { id: "LAFC", name: "로스앤젤레스 FC" },
-    { id: "ATM", name: "아틀레티코" },
-    { id: "TOT", name: "토트넘" },
-    { id: "PSG", name: "파리 생제르맹" },
-    { id: "MCI", name: "맨시티" },
-    { id: "BAR", name: "바르셀로나" },
-  ];
+  // 1. 초기 선수 목록 로드
+  useEffect(() => {
+    const fetchPlayers = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/players`);
+        if (res.ok) {
+          const data: Player[] = await res.json();
+          setPlayers(data);
+          if (data.length > 0 && !selectedPlayer) {
+            setSelectedPlayer(data[0]); // 기본: 첫 번째 트렌딩 스타 (라민 야말)
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load players:", err);
+      }
+    };
+    fetchPlayers();
+  }, []);
 
-  // 구단 검색
+  // 2. 선수 검색 자동완성
   useEffect(() => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
@@ -185,7 +293,7 @@ export default function Home() {
     }
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/clubs?q=${encodeURIComponent(searchQuery)}`);
+        const res = await fetch(`${API_BASE}/api/players?q=${encodeURIComponent(searchQuery)}`);
         if (res.ok) {
           const data = await res.json();
           setSearchResults(data);
@@ -197,87 +305,113 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // 피드 로드
-  const fetchFeed = async () => {
-    setLoading(true);
+  // 3. 선택된 선수의 탭 데이터 로드
+  useEffect(() => {
+    if (!selectedPlayer) return;
+    const fetchTabData = async () => {
+      setLoading(true);
+      try {
+        if (activeTab === "news") {
+          const res = await fetch(`${API_BASE}/api/players/${selectedPlayer.id}/feed?lang=${lang}`);
+          if (res.ok) setArticles(await res.json());
+        } else if (activeTab === "reactions") {
+          const res = await fetch(`${API_BASE}/api/players/${selectedPlayer.id}/reactions?lang=${lang}`);
+          if (res.ok) {
+            const data = await res.json();
+            setReactions(data.reactions || []);
+            setBriefing(data.briefing || []);
+          }
+        } else if (activeTab === "talk") {
+          const res = await fetch(`${API_BASE}/api/players/${selectedPlayer.id}/comments?lang=${lang}`);
+          if (res.ok) setComments(await res.json());
+        }
+      } catch (err) {
+        console.error("Tab fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTabData();
+  }, [selectedPlayer, activeTab, lang]);
+
+  // 댓글 등록 처리
+  const handleCommentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPlayer || !newCommentText.trim()) return;
+
+    setSubmittingComment(true);
     try {
-      const clubsParam = selectedClubs.length > 0 ? `&clubs=${selectedClubs.join(",")}` : "";
-      const res = await fetch(`${API_BASE}/api/feed?lang=${lang}${clubsParam}`);
+      const res = await fetch(`${API_BASE}/api/players/${selectedPlayer.id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          author_name: authorName.trim() || "축구팬",
+          author_country: authorCountry,
+          source_lang: lang,
+          text: newCommentText.trim(),
+        }),
+      });
       if (res.ok) {
-        const data = await res.json();
-        setArticles(data);
+        const created: Comment = await res.json();
+        setComments([created, ...comments]);
+        setNewCommentText("");
       }
     } catch (err) {
-      console.error("Feed fetch error:", err);
+      console.error("Comment submit error:", err);
     } finally {
-      setLoading(false);
+      setSubmittingComment(false);
     }
   };
 
-  useEffect(() => {
-    fetchFeed();
-  }, [selectedClubs, lang]);
+  // 댓글 좋아요 처리
+  const handleLike = async (commentId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/comments/${commentId}/like`, { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        setComments(comments.map((c) => (c.id === commentId ? { ...c, likes_count: data.likes_count } : c)));
+      }
+    } catch (err) {
+      console.error("Like error:", err);
+    }
+  };
 
-  const toggleClub = (id?: string) => {
-    if (!id) return;
-    if (selectedClubs.includes(id)) {
-      setSelectedClubs(selectedClubs.filter((c) => c !== id));
+  const toggleFavorite = (playerId: string) => {
+    if (favorites.includes(playerId)) {
+      setFavorites(favorites.filter((id) => id !== playerId));
     } else {
-      setSelectedClubs([...selectedClubs, id]);
-    }
-    setSearchQuery("");
-    setSearchResults([]);
-  };
-
-  const getTierBadge = (tier: number) => {
-    switch (tier) {
-      case 1:
-        return <span className="inline-flex items-center gap-1 rounded-full bg-emerald-900/60 px-2.5 py-0.5 text-xs font-semibold text-emerald-400 border border-emerald-700/50">{t.tier1}</span>;
-      case 2:
-        return <span className="inline-flex items-center gap-1 rounded-full bg-amber-900/60 px-2.5 py-0.5 text-xs font-semibold text-amber-400 border border-amber-700/50">{t.tier2}</span>;
-      default:
-        return <span className="inline-flex items-center gap-1 rounded-full bg-gray-800 px-2.5 py-0.5 text-xs font-semibold text-gray-400 border border-gray-700">{t.tier3}</span>;
+      setFavorites([...favorites, playerId]);
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "DONE_DEAL":
-        return <span className="rounded bg-blue-600/30 px-2 py-0.5 text-xs font-bold text-blue-400 border border-blue-500/40">DONE DEAL</span>;
-      case "HERE_WE_GO":
-        return <span className="rounded bg-emerald-600/30 px-2 py-0.5 text-xs font-bold text-emerald-400 border border-emerald-500/40">HERE WE GO</span>;
-      case "TALKS":
-        return <span className="rounded bg-indigo-600/30 px-2 py-0.5 text-xs font-bold text-indigo-400 border border-indigo-500/40">{t.talks}</span>;
-      default:
-        return <span className="rounded bg-gray-700/40 px-2 py-0.5 text-xs font-bold text-gray-300 border border-gray-600/40">RUMOR</span>;
-    }
+  const toggleOriginal = (commentId: string) => {
+    setShowOriginalMap((prev) => ({ ...prev, [commentId]: !prev[commentId] }));
   };
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
-      {/* 1. 상단 글로벌 헤더 */}
-      <header className="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-gray-800/80 pb-6">
+      {/* 1. 메인 글로벌 헤더 */}
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-gray-800/80 pb-5">
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-2">
               <Activity className="h-8 w-8 text-emerald-400" />
               Foot<span className="text-emerald-400">Pulse</span>
             </h1>
-            <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400 border border-emerald-500/20">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              {t.nodeActive}
+            <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-400 border border-emerald-500/20">
+              v3.0 Player Hub
             </span>
           </div>
-          <p className="mt-1 text-sm text-gray-400">{t.subtitle}</p>
+          <p className="mt-1 text-xs sm:text-sm text-gray-400">{t.hubTitle}</p>
         </div>
 
-        {/* 7개 국어 다국어 선택기 */}
-        <div className="flex items-center gap-2 rounded-lg bg-gray-900 p-1 border border-gray-800 shadow-sm">
-          <Globe className="ml-2 h-4 w-4 text-emerald-400" />
+        {/* 6개 국어 다국어 선택기 */}
+        <div className="flex items-center gap-2 rounded-xl bg-gray-900 px-3 py-1.5 border border-gray-800 shadow-sm">
+          <Globe className="h-4 w-4 text-emerald-400" />
           <select
             value={lang}
             onChange={(e) => setLang(e.target.value)}
-            className="bg-transparent pr-3 py-1 text-sm font-semibold text-gray-200 focus:outline-none cursor-pointer"
+            className="bg-transparent text-sm font-bold text-gray-200 focus:outline-none cursor-pointer"
           >
             <option value="ko" className="bg-gray-900">🇰🇷 한국어</option>
             <option value="en" className="bg-gray-900">🇬🇧 English</option>
@@ -285,159 +419,374 @@ export default function Home() {
             <option value="zh" className="bg-gray-900">🇨🇳 简体中文</option>
             <option value="fr" className="bg-gray-900">🇫🇷 Français</option>
             <option value="it" className="bg-gray-900">🇮🇹 Italiano</option>
-            <option value="es" className="bg-gray-900">🇪🇸 Español</option>
           </select>
         </div>
       </header>
 
-      {/* 2. 스마트 구단 검색 및 필터 바 */}
-      <section className="mb-8 space-y-4">
-        <div className="relative">
-          <div className="flex items-center rounded-xl bg-gray-900/90 px-4 py-3 border border-gray-800 shadow-inner focus-within:border-emerald-500/60 transition">
-            <Search className="h-5 w-5 text-gray-400 mr-3" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t.searchPlaceholder}
-              className="w-full bg-transparent text-sm text-white placeholder-gray-500 focus:outline-none"
-            />
-          </div>
+      {/* 2. 선수 통합 검색창 */}
+      <div className="relative mb-6">
+        <div className="flex items-center rounded-2xl bg-gray-900/90 px-4 py-3.5 border border-gray-800 shadow-lg focus-within:border-emerald-500/60 transition">
+          <Search className="h-5 w-5 text-gray-400 mr-3" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={t.searchPlaceholder}
+            className="w-full bg-transparent text-sm text-white placeholder-gray-500 focus:outline-none"
+          />
+        </div>
 
-          {/* 검색 자동완성 드롭다운 */}
-          {searchResults.length > 0 && (
-            <div className="absolute z-20 mt-2 w-full rounded-xl bg-gray-900/95 p-2 shadow-2xl border border-gray-700 backdrop-blur-md">
-              {searchResults.map((club) => {
-                const cid = club.id || club.club_id;
-                return (
-                  <button
-                    key={cid}
-                    onClick={() => toggleClub(cid)}
-                    className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-gray-200 hover:bg-gray-800 transition"
+        {/* 검색 드롭다운 */}
+        {searchResults.length > 0 && (
+          <div className="absolute z-30 mt-2 w-full rounded-2xl bg-gray-900/95 p-2 shadow-2xl border border-gray-700 backdrop-blur-md">
+            {searchResults.map((player) => (
+              <button
+                key={player.id}
+                onClick={() => {
+                  setSelectedPlayer(player);
+                  setSearchQuery("");
+                  setSearchResults([]);
+                }}
+                className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-left hover:bg-gray-800 transition"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">{COUNTRY_FLAGS[player.nationality_code || ""] || "⚽"}</span>
+                  <div>
+                    <span className="font-bold text-white text-sm">{player.name_ko} ({player.name_en})</span>
+                    <span className="block text-xs text-emerald-400">{player.current_club_name} · {player.position}</span>
+                  </div>
+                </div>
+                <ArrowRight className="h-4 w-4 text-gray-500" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 3. 트렌딩 선수 퀵 바 (가로 스크롤) */}
+      <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+        <span className="text-xs font-bold text-gray-400 whitespace-nowrap flex items-center gap-1">
+          {t.trending}
+        </span>
+        {players.map((p) => {
+          const isSelected = selectedPlayer?.id === p.id;
+          return (
+            <button
+              key={p.id}
+              onClick={() => setSelectedPlayer(p)}
+              className={`rounded-full px-3.5 py-1.5 text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 ${
+                isSelected
+                  ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/20 scale-105"
+                  : "bg-gray-900 text-gray-300 hover:bg-gray-800 border border-gray-800"
+              }`}
+            >
+              <span>{COUNTRY_FLAGS[p.nationality_code || ""] || "⚽"}</span>
+              {p.name_ko}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 4. 선수 전용 허브 (Player Hub) 히어로 카드 */}
+      {selectedPlayer && (
+        <div className="mb-8 rounded-3xl bg-gradient-to-br from-[#121829] via-[#0f1422] to-[#090d16] p-6 border border-gray-800 shadow-2xl relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 relative z-10">
+            <div className="flex items-center gap-4">
+              <div className="relative h-20 w-20 sm:h-24 sm:w-24 rounded-2xl overflow-hidden border-2 border-emerald-500/40 shadow-xl bg-gray-800 flex-shrink-0">
+                <img
+                  src={selectedPlayer.photo_url || "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=400"}
+                  alt={selectedPlayer.name_ko}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-2xl sm:text-3xl font-black text-white">{selectedPlayer.name_ko}</h2>
+                  <span className="text-base">{COUNTRY_FLAGS[selectedPlayer.nationality_code || ""] || "⚽"}</span>
+                </div>
+                <p className="text-xs sm:text-sm font-semibold text-gray-400">{selectedPlayer.name_en}</p>
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                  <span className="rounded-lg bg-emerald-500/20 px-2.5 py-1 font-bold text-emerald-300 border border-emerald-500/30">
+                    {selectedPlayer.current_club_name}
+                  </span>
+                  <span className="rounded-lg bg-gray-800 px-2.5 py-1 font-semibold text-gray-300">
+                    {selectedPlayer.position}
+                  </span>
+                  <span className="rounded-lg bg-gray-800 px-2.5 py-1 font-semibold text-gray-400">
+                    {selectedPlayer.nationality}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* 즐겨찾기 버튼 */}
+            <button
+              onClick={() => toggleFavorite(selectedPlayer.id)}
+              className={`flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold transition border ${
+                favorites.includes(selectedPlayer.id)
+                  ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                  : "bg-gray-800/80 text-gray-300 hover:bg-gray-700 border-gray-700"
+              }`}
+            >
+              <Star className={`h-4 w-4 ${favorites.includes(selectedPlayer.id) ? "fill-amber-400 text-amber-400" : ""}`} />
+              {favorites.includes(selectedPlayer.id) ? t.favorited : t.favorite}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 5. 선수 허브 3대 탭 네비게이션 */}
+      <div className="mb-6 flex rounded-2xl bg-gray-900/90 p-1.5 border border-gray-800">
+        <button
+          onClick={() => setActiveTab("news")}
+          className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs sm:text-sm font-bold transition ${
+            activeTab === "news" ? "bg-emerald-500 text-black shadow-md" : "text-gray-400 hover:text-white"
+          }`}
+        >
+          <Newspaper className="h-4 w-4" />
+          {t.tabNews}
+        </button>
+        <button
+          onClick={() => setActiveTab("reactions")}
+          className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs sm:text-sm font-bold transition ${
+            activeTab === "reactions" ? "bg-emerald-500 text-black shadow-md" : "text-gray-400 hover:text-white"
+          }`}
+        >
+          <Flame className="h-4 w-4" />
+          {t.tabReactions}
+        </button>
+        <button
+          onClick={() => setActiveTab("talk")}
+          className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs sm:text-sm font-bold transition ${
+            activeTab === "talk" ? "bg-emerald-500 text-black shadow-md" : "text-gray-400 hover:text-white"
+          }`}
+        >
+          <MessageSquare className="h-4 w-4" />
+          {t.tabTalk}
+        </button>
+      </div>
+
+      {/* 6. 탭별 컨텐츠 렌더링 */}
+      {loading ? (
+        <div className="py-20 text-center text-gray-500">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent"></div>
+        </div>
+      ) : (
+        <div>
+          {/* [탭 1] 실시간 뉴스 & 이적 피드 */}
+          {activeTab === "news" && (
+            <div className="space-y-4">
+              {articles.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-gray-800 p-12 text-center text-gray-400">
+                  <Sparkles className="mx-auto h-8 w-8 text-gray-600 mb-2" />
+                  <p className="text-sm font-medium">{t.emptyNews}</p>
+                </div>
+              ) : (
+                articles.map((article) => (
+                  <article
+                    key={article.id}
+                    className="rounded-2xl bg-[#111624] p-5 border border-gray-800 shadow-md hover:border-gray-700 transition"
                   >
-                    <span className="font-semibold">{club.name_ko} ({club.name_en})</span>
-                    <span className="text-xs text-gray-400">{club.league}</span>
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-full bg-emerald-900/60 px-2.5 py-0.5 text-xs font-semibold text-emerald-400 border border-emerald-700/50">
+                          {article.tier === 1 ? t.tier1 : article.tier === 2 ? t.tier2 : t.tier3}
+                        </span>
+                        <span className="rounded bg-indigo-600/30 px-2 py-0.5 text-xs font-bold text-indigo-400 border border-indigo-500/40">
+                          {article.transfer_status || "REPORT"}
+                        </span>
+                        <span className="text-xs font-medium text-gray-400">{article.source_name}</span>
+                      </div>
+                      <span className="text-xs text-gray-500">
+                        {article.published_at ? new Date(article.published_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }) : "방금 전"}
+                      </span>
+                    </div>
+
+                    <h3 className="text-lg font-bold text-white mb-2 leading-snug">
+                      {stripHtml(article.title)}
+                    </h3>
+
+                    <p className="text-sm text-gray-300 leading-relaxed bg-gray-900/40 p-3.5 rounded-xl border border-gray-800/40">
+                      {stripHtml(article.summary)}
+                    </p>
+
+                    <div className="mt-4 flex justify-end border-t border-gray-800/60 pt-3">
+                      <a
+                        href={article.source_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition"
+                      >
+                        {t.readOriginal} <ExternalLink className="h-3.5 w-3.5" />
+                      </a>
+                    </div>
+                  </article>
+                ))
+              )}
+            </div>
+          )}
+
+          {/* [탭 2] 해외 핫 반응 (Reddit, X) + AI 여론 브리핑 */}
+          {activeTab === "reactions" && (
+            <div className="space-y-5">
+              {/* 상단 AI 3줄 브리핑 카드 */}
+              {briefing.length > 0 && (
+                <div className="rounded-2xl bg-gradient-to-r from-emerald-950/40 via-gray-900 to-indigo-950/40 p-5 border border-emerald-500/30 shadow-lg">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sparkles className="h-5 w-5 text-emerald-400" />
+                    <h4 className="text-sm font-black text-emerald-300">{t.aiBriefing}</h4>
+                  </div>
+                  <ul className="space-y-1.5 text-xs sm:text-sm text-gray-300 list-disc list-inside">
+                    {briefing.map((line, idx) => (
+                      <li key={idx} className="leading-relaxed">{line}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* 해외 베스트 댓글 목록 */}
+              <div className="space-y-3">
+                {reactions.map((r) => (
+                  <div key={r.id} className="rounded-2xl bg-[#111624] p-5 border border-gray-800 shadow-md">
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-md bg-orange-600/20 px-2 py-0.5 text-xs font-bold text-orange-400 border border-orange-500/30">
+                          {r.platform}
+                        </span>
+                        <span className="text-xs font-semibold text-gray-400">{r.author_name || "현지팬"}</span>
+                      </div>
+                      <span className="flex items-center gap-1 text-xs font-bold text-emerald-400">
+                        ▲ {r.upvotes.toLocaleString()}
+                      </span>
+                    </div>
+
+                    <p className="text-sm font-semibold text-white mt-1 leading-relaxed">
+                      "{r.translated_text || r.original_text}"
+                    </p>
+
+                    {r.translated_text && (
+                      <p className="text-xs text-gray-500 mt-2 italic">
+                        Original: "{r.original_text}"
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* [탭 3] 글로벌 토크 💬 (다국적 교차 번역 커뮤니티) */}
+          {activeTab === "talk" && (
+            <div className="space-y-6">
+              {/* 댓글 작성 폼 */}
+              <form onSubmit={handleCommentSubmit} className="rounded-2xl bg-gray-900/90 p-4 sm:p-5 border border-gray-800 shadow-xl">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-xs sm:text-sm font-bold text-gray-200">{t.writeComment}</h4>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={authorCountry}
+                      onChange={(e) => setAuthorCountry(e.target.value)}
+                      className="rounded-lg bg-gray-800 px-2.5 py-1 text-xs font-bold text-gray-200 border border-gray-700 cursor-pointer"
+                    >
+                      <option value="KR">🇰🇷 한국</option>
+                      <option value="ES">🇪🇸 España</option>
+                      <option value="GB">🇬🇧 UK</option>
+                      <option value="US">🇺🇸 USA</option>
+                      <option value="FR">🇫🇷 France</option>
+                      <option value="IT">🇮🇹 Italia</option>
+                      <option value="JP">🇯🇵 日本</option>
+                    </select>
+                    <input
+                      type="text"
+                      value={authorName}
+                      onChange={(e) => setAuthorName(e.target.value)}
+                      placeholder={t.nicknamePlaceholder}
+                      className="w-28 rounded-lg bg-gray-800 px-2.5 py-1 text-xs text-white placeholder-gray-500 border border-gray-700 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <textarea
+                  rows={3}
+                  value={newCommentText}
+                  onChange={(e) => setNewCommentText(e.target.value)}
+                  placeholder={t.commentPlaceholder}
+                  className="w-full rounded-xl bg-gray-950/80 p-3 text-sm text-white placeholder-gray-500 border border-gray-800 focus:border-emerald-500/60 focus:outline-none transition"
+                />
+
+                <div className="mt-3 flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={submittingComment || !newCommentText.trim()}
+                    className="flex items-center gap-1.5 rounded-xl bg-emerald-500 px-5 py-2 text-xs font-bold text-black hover:bg-emerald-400 disabled:opacity-50 transition shadow-lg shadow-emerald-500/20"
+                  >
+                    <Send className="h-3.5 w-3.5" />
+                    {submittingComment ? "..." : t.postComment}
                   </button>
-                );
-              })}
+                </div>
+              </form>
+
+              {/* 글로벌 댓글 목록 */}
+              <div className="space-y-4">
+                {comments.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-gray-800 p-12 text-center text-gray-400">
+                    <MessageSquare className="mx-auto h-8 w-8 text-gray-600 mb-2" />
+                    <p className="text-sm font-medium">{t.emptyComments}</p>
+                  </div>
+                ) : (
+                  comments.map((c) => {
+                    const isShowingOriginal = !!showOriginalMap[c.id];
+                    const flag = COUNTRY_FLAGS[c.author_country] || "⚽";
+                    const srcLangName = LANG_NAMES[c.source_lang] || c.source_lang;
+
+                    return (
+                      <div key={c.id} className="rounded-2xl bg-[#111624] p-5 border border-gray-800 shadow-md">
+                        <div className="flex items-center justify-between gap-2 mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">{flag}</span>
+                            <span className="text-sm font-bold text-white">{c.author_name}</span>
+                            <span className="text-xs text-gray-500">
+                              {new Date(c.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => handleLike(c.id)}
+                            className="flex items-center gap-1.5 rounded-lg bg-gray-800/80 px-2.5 py-1 text-xs font-bold text-gray-300 hover:text-red-400 transition"
+                          >
+                            <Heart className="h-3.5 w-3.5 fill-red-500/20 text-red-400" />
+                            {c.likes_count}
+                          </button>
+                        </div>
+
+                        {/* 댓글 본문 (번역문 또는 원문) */}
+                        <p className="text-sm text-gray-200 leading-relaxed font-medium">
+                          {isShowingOriginal ? c.original_text : c.display_text}
+                        </p>
+
+                        {/* 번역 상태 표시 및 원문 보기 토글 */}
+                        {c.is_translated && (
+                          <div className="mt-3 flex items-center justify-between border-t border-gray-800/60 pt-2.5">
+                            <span className="text-xs font-medium text-emerald-400/80 flex items-center gap-1">
+                              <Globe className="h-3 w-3" />
+                              {LANG_NAMES[lang]} {t.translatedFrom} ({t.originalLang}: {srcLangName})
+                            </span>
+                            <button
+                              onClick={() => toggleOriginal(c.id)}
+                              className="text-xs font-bold text-gray-400 hover:text-white underline transition"
+                            >
+                              {isShowingOriginal ? t.viewTranslated : t.viewOriginal}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
           )}
         </div>
-
-        {/* 퀵 필터 칩 */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold text-gray-400 flex items-center gap-1 mr-1">
-            <Filter className="h-3.5 w-3.5" /> {t.quickClubs}
-          </span>
-          {quickClubs.map((club) => {
-            const isSelected = selectedClubs.includes(club.id);
-            return (
-              <button
-                key={club.id}
-                onClick={() => toggleClub(club.id)}
-                className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                  isSelected
-                    ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/20"
-                    : "bg-gray-800/80 text-gray-300 hover:bg-gray-700 border border-gray-700/60"
-                }`}
-              >
-                {club.name}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* 활성화된 필터 칩 */}
-        {selectedClubs.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-800/60">
-            <span className="text-xs font-medium text-emerald-400">{t.filterActive}</span>
-            {selectedClubs.map((cid) => (
-              <span
-                key={cid}
-                className="inline-flex items-center gap-1.5 rounded-full bg-emerald-950/70 px-3 py-1 text-xs font-bold text-emerald-300 border border-emerald-600/40"
-              >
-                {cid}
-                <X className="h-3 w-3 cursor-pointer hover:text-white" onClick={() => toggleClub(cid)} />
-              </span>
-            ))}
-            <button
-              onClick={() => setSelectedClubs([])}
-              className="text-xs text-gray-500 hover:text-gray-300 underline ml-2"
-            >
-              {t.reset}
-            </button>
-          </div>
-        )}
-      </section>
-
-      {/* 3. 100% 순수 축구 피드 카드 리스트 */}
-      <main className="space-y-4">
-        {loading ? (
-          <div className="py-16 text-center text-gray-500">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent"></div>
-            <p className="mt-3 text-sm">{t.loading}</p>
-          </div>
-        ) : articles.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-gray-800 p-12 text-center text-gray-400">
-            <Sparkles className="mx-auto h-8 w-8 text-gray-600 mb-2" />
-            <p className="font-medium">{t.empty}</p>
-            <p className="text-xs text-gray-500 mt-1">{t.emptySub}</p>
-          </div>
-        ) : (
-          articles.map((article) => (
-            <article
-              key={article.id}
-              className="group rounded-2xl bg-[#111624] p-5 border border-gray-800/80 shadow-lg hover:border-gray-700 transition"
-            >
-              <div className="flex items-center justify-between gap-2 mb-3">
-                <div className="flex items-center gap-2">
-                  {getTierBadge(article.tier)}
-                  {getStatusBadge(article.transfer_status)}
-                  <span className="text-xs font-medium text-gray-400">{article.source_name}</span>
-                </div>
-                <span className="text-xs text-gray-400">
-                  {article.published_at ? new Date(article.published_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }) : "방금 전"}
-                </span>
-              </div>
-
-              <h2 className="text-lg font-bold text-white group-hover:text-emerald-300 transition leading-snug">
-                {stripHtml(article.title)}
-              </h2>
-
-              <p className="mt-2 text-sm text-gray-300 leading-relaxed bg-gray-900/40 p-3 rounded-xl border border-gray-800/40">
-                {stripHtml(article.summary)}
-              </p>
-
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-gray-800/60 pt-3">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {article.mentioned_clubs &&
-                    article.mentioned_clubs.map((c, idx) => {
-                      const cid = c.club_id || c.id;
-                      return (
-                        <button
-                          key={idx}
-                          onClick={() => toggleClub(cid)}
-                          className="rounded-md bg-gray-800/70 px-2.5 py-1 text-xs font-semibold text-gray-300 hover:bg-emerald-900/40 hover:text-emerald-300 border border-gray-700/50 transition"
-                        >
-                          #{c.name_ko || cid}
-                        </button>
-                      );
-                    })}
-                </div>
-
-                <a
-                  href={article.source_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs font-medium text-emerald-400 hover:text-emerald-300 transition"
-                >
-                  {t.readOriginal} <ExternalLink className="h-3 w-3" />
-                </a>
-              </div>
-            </article>
-          ))
-        )}
-      </main>
+      )}
     </div>
   );
 }
