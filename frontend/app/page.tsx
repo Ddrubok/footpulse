@@ -28,6 +28,20 @@ interface Article {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://tired-east-small-years.trycloudflare.com";
 
+// HTML 태그 및 엔티티 완전 정제 헬퍼
+const stripHtml = (str?: string) => {
+  if (!str) return "";
+  return str
+    .replace(/<[^>]*>?/gm, " ")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
 // 다국어 UI 텍스트 사전
 const I18N: Record<string, Record<string, string>> = {
   ko: {
@@ -387,11 +401,11 @@ export default function Home() {
               </div>
 
               <h2 className="text-lg font-bold text-white group-hover:text-emerald-300 transition leading-snug">
-                {article.title}
+                {stripHtml(article.title)}
               </h2>
 
               <p className="mt-2 text-sm text-gray-300 leading-relaxed bg-gray-900/40 p-3 rounded-xl border border-gray-800/40">
-                {article.summary}
+                {stripHtml(article.summary)}
               </p>
 
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-gray-800/60 pt-3">
