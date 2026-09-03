@@ -1,4 +1,4 @@
-﻿import os
+import os
 import re
 import json
 import urllib.request
@@ -22,13 +22,17 @@ def search_thesportsdb(player_name: str) -> Optional[Dict[str, Any]]:
             data = json.loads(resp.read().decode('utf-8'))
             players = data.get("player")
             if players and len(players) > 0:
-                p = players[0]
+                # 오직 '축구(Soccer)' 종목의 선수만 엄격히 필터링 (모터스포츠 드라이버, 농구 등 배제)
+                soccer_players = [pl for pl in players if (pl.get("strSport") or "").lower() == "soccer"]
+                if not soccer_players:
+                    return None
+                p = soccer_players[0]
                 # 사진: 누끼(strCutout) 우선, 없으면 썸네일(strThumb)
                 photo = p.get("strCutout") or p.get("strThumb") or "https://r2.thesportsdb.com/images/media/player/cutout/m9n4ja1761512633.png"
                 name_en = p.get("strPlayer", player_name)
                 club = p.get("strTeam", "Club")
                 nationality = p.get("strNationality", "Global")
-                position = p.get("strPosition", "Footballer")
+                position = p.get("strPosition", "Midfielder")
                 
                 # 고유 slug ID 생성
                 slug_id = re.sub(r'[^a-z0-9]+', '-', name_en.lower()).strip('-')
