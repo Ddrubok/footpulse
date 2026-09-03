@@ -1,4 +1,4 @@
-﻿from bottle import Bottle, request, response, run
+from bottle import Bottle, request, response, run
 import pg8000.native
 import json
 import os
@@ -85,7 +85,7 @@ def generate_player_sentiment_summary(player_name: str, comments: list) -> str:
 def root():
     response.content_type = 'application/json'
     return json.dumps({
-        "service": "FootPulse v3.2 Intelligence Hub API",
+        "service": "Football Disputatio (FootDi) Intelligence Hub API",
         "node": "Samsung Galaxy S21 Ultra (Termux)",
         "engine": "PostgreSQL 18.2 + Bottle",
         "status": "online"

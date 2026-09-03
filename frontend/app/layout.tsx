@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "FootPulse | 실시간 축구 뉴스·이적 피드",
-  description: "전 세계 프로 구단 교차 분석 및 실시간 축구 이적 피드",
+  title: "Football Disputatio (풋디) | 글로벌 축구 선수 토론 & 교차 번역 광장",
+  description: "전 세계 축구 팬들이 모국어로 실시간 토론하는 글로벌 선수 인텔리전스 허브 & 토론 광장 - Football Disputatio (풋디)",
 };
 
 export default function RootLayout({

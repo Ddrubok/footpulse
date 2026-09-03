@@ -72,7 +72,7 @@ const LANG_NAMES: Record<string, string> = {
 
 const I18N: Record<string, Record<string, string>> = {
   ko: {
-    hubTitle: "구글 트렌드 기반 선수 허브 & 글로벌 다국어 교차 번역 커뮤니티",
+    hubTitle: "전 세계 축구 팬들의 선수 토론 광장 & 글로벌 다국어 교차 번역 허브",
     searchPlaceholder: "선수 검색 (초성 ㅅㅎㅁ, Musiala, Guler, 바르셀로나, 뮌헨)...",
     trending: "오늘의 트렌딩 스타:",
     tabNews: "뉴스 & 이적",
@@ -88,7 +88,7 @@ const I18N: Record<string, Record<string, string>> = {
     writeComment: "모국어로 자유롭게 의견을 공유하세요",
     postComment: "등록",
     nicknamePlaceholder: "닉네임",
-    commentPlaceholder: "이 선수에 대한 의견이나 응원 메시지를 모국어로 자유롭게 남겨보세요...",
+    commentPlaceholder: "이 선수에 대한 의견이나 토론 메시지를 모국어로 자유롭게 남겨보세요...",
     tier1: "Tier 1 공식 외신",
     tier2: "Tier 2 전담 기자",
     tier3: "Tier 3 이적 보도",
@@ -98,7 +98,7 @@ const I18N: Record<string, Record<string, string>> = {
     emptyComments: "등록된 자체 팬 코멘트가 없습니다. 첫 의견을 남겨보세요.",
   },
   en: {
-    hubTitle: "Trend-Driven Football Player Hub & Cross-Language Community",
+    hubTitle: "Global Football Player Debate Arena & Cross-Language Community",
     searchPlaceholder: "Search player (e.g., Son, Musiala, Guler, Barcelona, Bayern)...",
     trending: "Trending Stars Today:",
     tabNews: "News & Transfers",
@@ -111,10 +111,10 @@ const I18N: Record<string, Record<string, string>> = {
     viewTranslated: "View translation",
     translatedFrom: "Translated to",
     originalLang: "Original",
-    writeComment: "Join the discussion in your native language",
+    writeComment: "Join the debate in your native language",
     postComment: "Submit",
     nicknamePlaceholder: "Nickname",
-    commentPlaceholder: "Share your perspective on this player...",
+    commentPlaceholder: "Share your debate or perspective on this player...",
     tier1: "Tier 1 Official",
     tier2: "Tier 2 Beat Reporter",
     tier3: "Tier 3 Report",
@@ -398,12 +398,14 @@ export default function Home() {
       <header className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-neutral-800 pb-5">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-extrabold tracking-tight text-white flex items-center gap-2">
-              <Activity className="h-6 w-6 text-emerald-500" />
-              <span>FootPulse</span>
-            </h1>
-            <span className="rounded bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300 border border-neutral-700">
-              v3.2 Hub
+            <div className="flex items-center gap-2">
+              <MessageSquare className="h-6 w-6 text-emerald-500" />
+              <h1 className="text-2xl font-extrabold tracking-tight text-white">
+                Football Disputatio
+              </h1>
+            </div>
+            <span className="rounded bg-neutral-800 px-2.5 py-0.5 text-xs font-bold text-emerald-400 border border-neutral-700">
+              풋디 (FootDi)
             </span>
           </div>
           <p className="mt-1 text-xs text-neutral-400 font-normal">{t.hubTitle}</p>
