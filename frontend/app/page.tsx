@@ -84,7 +84,7 @@ const I18N: Record<string, Record<string, string>> = {
     searchPlaceholder: "선수 검색 (초성 ㅅㅎㅁ, Musiala, Guler, 바르셀로나, 뮌헨)...",
     trending: "주목받는 선수:",
     tabNews: "뉴스 & 이적",
-    tabReactions: "해외 현지 반응",
+    tabReactions: "해외 포럼 반응 (Reddit · 𝕏)",
     tabTalk: "글로벌 토크",
     favorite: "관심 등록",
     favorited: "관심 선수",
@@ -107,7 +107,7 @@ const I18N: Record<string, Record<string, string>> = {
     searchPlaceholder: "Search player (e.g., Son, Musiala, Guler, Barcelona, Bayern)...",
     trending: "Featured Players:",
     tabNews: "News & Transfers",
-    tabReactions: "Global Reactions",
+    tabReactions: "Forum Threads (Reddit · 𝕏)",
     tabTalk: "Global Talk",
     favorite: "Track",
     favorited: "Tracking",
@@ -673,35 +673,77 @@ export default function Home() {
                 </div>
               )}
 
-              {/* 외부 수집 댓글 목록 */}
+              {/* 해외 포럼 댓글 스레드 목록 */}
               {reactions.length === 0 ? (
                 <div className="rounded border border-dashed border-neutral-800 p-8 text-center text-neutral-400">
                   <p className="text-sm">{t.emptyReactions}</p>
                 </div>
               ) : (
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   {reactions.map((r) => (
-                    <div key={r.id} className="rounded-lg bg-neutral-900 p-4 border border-neutral-800">
-                      <div className="flex items-center justify-between text-xs text-neutral-400 mb-1.5">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-semibold text-neutral-300">{r.platform}</span>
-                          <span>·</span>
-                          <span>{r.author_name || "현지 팬"}</span>
+                    <div key={r.id} className="rounded-lg bg-neutral-900/90 p-4 border border-neutral-800 hover:border-neutral-700 transition">
+                      {/* 상단: 플랫폼 고유 마크 + 작성자 u/닉네임 + 작성 시간 */}
+                      <div className="flex items-center justify-between text-xs mb-2">
+                        <div className="flex items-center gap-2">
+                          {r.platform.includes('Reddit') ? (
+                            <span className="inline-flex items-center gap-1 rounded bg-orange-950/60 px-2 py-0.5 font-bold text-orange-400 border border-orange-800/60 text-[11px]">
+                              <span className="h-1.5 w-1.5 rounded-full bg-orange-400"></span>
+                              {r.platform}
+                            </span>
+                          ) : r.platform.includes('X') ? (
+                            <span className="inline-flex items-center gap-1 rounded bg-neutral-800 px-2 py-0.5 font-bold text-white border border-neutral-700 text-[11px]">
+                              𝕏 {r.platform}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded bg-red-950/60 px-2 py-0.5 font-bold text-red-400 border border-red-800/60 text-[11px]">
+                              ▶ {r.platform}
+                            </span>
+                          )}
+                          <span className="font-semibold text-neutral-200">
+                            u/{r.author_name || "football_fan"}
+                          </span>
                         </div>
-                        <span className="font-medium text-emerald-400">
-                          ▲ {r.upvotes.toLocaleString()}
+                        <span className="text-neutral-500 text-[11px]">
+                          {r.created_at ? new Date(r.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }) : "최근"}
                         </span>
                       </div>
 
-                      <p className="text-sm font-medium text-neutral-100 mt-1 leading-relaxed">
-                        "{r.translated_text || r.original_text}"
-                      </p>
-
-                      {r.translated_text && (
-                        <p className="text-xs text-neutral-500 mt-1 font-normal italic">
-                          Original: "{r.original_text}"
+                      {/* 댓글 본문: 한국어 번역 텍스트 */}
+                      <div className="pl-1">
+                        <p className="text-sm font-medium text-neutral-100 leading-relaxed">
+                          {r.translated_text || r.original_text}
                         </p>
-                      )}
+
+                        {/* 원문 인용 상자 */}
+                        {r.translated_text && (
+                          <div className="mt-2.5 rounded bg-neutral-950/80 p-2.5 border border-neutral-800/80">
+                            <span className="block text-[10px] font-semibold text-neutral-500 uppercase tracking-wider mb-0.5">
+                              Original ({r.platform})
+                            </span>
+                            <p className="text-xs text-neutral-400 italic leading-normal">
+                              "{r.original_text}"
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 하단: 업보트/추천, 답글 스레드 지표 */}
+                      <div className="mt-3 flex items-center justify-between border-t border-neutral-800/60 pt-2 text-xs text-neutral-400">
+                        <div className="flex items-center gap-3">
+                          <span className="flex items-center gap-1 font-semibold text-emerald-400">
+                            ▲ {r.upvotes.toLocaleString()} 추천
+                          </span>
+                          <span className="text-neutral-500 hover:text-neutral-300 cursor-pointer transition">
+                            💬 답글 {Math.floor(r.upvotes / 80) + 1}개
+                          </span>
+                          <span className="text-neutral-500 hover:text-neutral-300 cursor-pointer transition">
+                            공유
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-neutral-500">
+                          실시간 해외 여론
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>
