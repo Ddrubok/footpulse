@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { 
   Search, Globe, Star, MessageSquare, Newspaper, 
-  Heart, ExternalLink, Activity, ArrowRight, Send, User, Quote
+  Heart, ExternalLink, Activity, ArrowRight, Send, User, Quote,
+  CornerDownRight, Trash2, X
 } from "lucide-react";
 
 interface Player {
@@ -60,6 +61,9 @@ interface Comment {
   is_translated: boolean;
   likes_count: number;
   created_at: string;
+  parent_id?: string | null;
+  has_password?: boolean;
+  replies?: Comment[];
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://tired-east-small-years.trycloudflare.com";
@@ -95,12 +99,20 @@ const I18N: Record<string, Record<string, string>> = {
     originalLang: "원문 언어",
     writeComment: "모국어로 자유롭게 의견을 공유하세요",
     postComment: "등록",
+    reply: "답글",
+    replyPlaceholder: "이 의견에 대한 답글을 남겨보세요...",
+    cancel: "취소",
+    delete: "삭제",
+    deleteConfirm: "정말 이 댓글을 삭제하시겠습니까?",
+    promptPin: "작성 시 설정한 4자리 비밀번호를 입력해주세요:",
+    wrongPassword: "비밀번호가 일치하지 않습니다.",
+    passwordPlaceholder: "비번 4자리",
     nicknamePlaceholder: "닉네임",
     commentPlaceholder: "이 선수에 대한 의견이나 토론 메시지를 모국어로 자유롭게 남겨보세요...",
     readOriginal: "기사 원문 보기",
     emptyNews: "해당 선수의 최신 기사를 수집 동기화 중입니다.",
     emptyReactions: "수집된 해외 현지 반응을 동기화 중입니다.",
-    emptyComments: "등록된 자체 팬 코멘트가 없습니다. 첫 의견을 남겨보세요.",
+    emptyComments: "등록된 팬 토론이 없습니다. 첫 의견을 남겨보세요.",
   },
   en: {
     hubTitle: "Global Football Player Debate Arena & Cross-Language Community",
@@ -118,19 +130,27 @@ const I18N: Record<string, Record<string, string>> = {
     originalLang: "Original",
     writeComment: "Join the debate in your native language",
     postComment: "Submit",
+    reply: "Reply",
+    replyPlaceholder: "Write a reply to this discussion...",
+    cancel: "Cancel",
+    delete: "Delete",
+    deleteConfirm: "Are you sure you want to delete this comment?",
+    promptPin: "Enter the 4-digit PIN set when writing:",
+    wrongPassword: "PIN does not match.",
+    passwordPlaceholder: "4-digit PIN",
     nicknamePlaceholder: "Nickname",
     commentPlaceholder: "Share your debate or perspective on this player...",
     readOriginal: "Read source article",
     emptyNews: "Syncing verified football coverage for this player...",
     emptyReactions: "Syncing global fan reactions for this player...",
-    emptyComments: "No community comments yet. Start the conversation.",
+    emptyComments: "No fan discussions yet. Start the conversation.",
   },
   ja: {
     hubTitle: "世界中のファンが集う選手討論アリーナ＆多言語コミュニティ",
     searchPlaceholder: "選手検索 (例: ソン・フンミン, ムシアラ, レアル, バルサ)...",
     trending: "注目の選手:",
-    tabNews: "ニュース＆移籍",
-    tabReactions: "海外現地反応",
+    tabNews: "뉴스＆移籍",
+    tabReactions: "海外フォーラム (Reddit · 𝕏)",
     tabTalk: "グローバルトーク",
     favorite: "お気に入り",
     favorited: "登録済み",
@@ -141,6 +161,14 @@ const I18N: Record<string, Record<string, string>> = {
     originalLang: "原文",
     writeComment: "母国語で世界のファンと意見を交わしましょう",
     postComment: "投稿",
+    reply: "返信",
+    replyPlaceholder: "この意見に返信...",
+    cancel: "キャンセル",
+    delete: "削除",
+    deleteConfirm: "このコメントを削除しますか？",
+    promptPin: "作成時に設定した4桁の暗証番号を入力してください:",
+    wrongPassword: "暗証番号が一致しません。",
+    passwordPlaceholder: "暗証番号4桁",
     nicknamePlaceholder: "ニックネーム",
     commentPlaceholder: "選手に関する意見を自由に投稿してください...",
     readOriginal: "元記事を読む",
@@ -153,7 +181,7 @@ const I18N: Record<string, Record<string, string>> = {
     searchPlaceholder: "搜索球员 (例如: 孙兴慜, 居莱尔, 穆西亚拉, 皇马, 拜仁)...",
     trending: "热门关注球员:",
     tabNews: "新闻与转会",
-    tabReactions: "海外热议",
+    tabReactions: "海外论坛讨论 (Reddit · 𝕏)",
     tabTalk: "全球对话",
     favorite: "关注球员",
     favorited: "已关注",
@@ -164,6 +192,14 @@ const I18N: Record<string, Record<string, string>> = {
     originalLang: "原文语言",
     writeComment: "用母语与全球球迷直接交流",
     postComment: "发布",
+    reply: "回复",
+    replyPlaceholder: "回复此讨论...",
+    cancel: "取消",
+    delete: "删除",
+    deleteConfirm: "确认删除此评论吗？",
+    promptPin: "请输入发布时设置的4位密码：",
+    wrongPassword: "密码不正确。",
+    passwordPlaceholder: "4位密码",
     nicknamePlaceholder: "昵称",
     commentPlaceholder: "分享你对该球员的看法...",
     readOriginal: "阅读原报道",
@@ -176,7 +212,7 @@ const I18N: Record<string, Record<string, string>> = {
     searchPlaceholder: "Rechercher un joueur (ex: Yamal, Musiala, Son, Real)...",
     trending: "Joueurs en vue:",
     tabNews: "Actualités & Transferts",
-    tabReactions: "Avis Internationaux",
+    tabReactions: "Forums Mondiaux (Reddit · 𝕏)",
     tabTalk: "Discussion Globale",
     favorite: "Suivre",
     favorited: "Suivi",
@@ -187,6 +223,14 @@ const I18N: Record<string, Record<string, string>> = {
     originalLang: "Langue source",
     writeComment: "Participez au débat dans votre propre langue",
     postComment: "Publier",
+    reply: "Répondre",
+    replyPlaceholder: "Répondre à cette discussion...",
+    cancel: "Annuler",
+    delete: "Supprimer",
+    deleteConfirm: "Voulez-vous supprimer ce commentaire ?",
+    promptPin: "Entrez le code à 4 chiffres défini lors de la publication :",
+    wrongPassword: "Code PIN incorrect.",
+    passwordPlaceholder: "PIN 4 chiffres",
     nicknamePlaceholder: "Pseudo",
     commentPlaceholder: "Partagez votre analyse sur ce joueur...",
     readOriginal: "Lire la source",
@@ -199,7 +243,7 @@ const I18N: Record<string, Record<string, string>> = {
     searchPlaceholder: "Cerca calciatore (es: Yamal, Musiala, Son, Barcellona)...",
     trending: "Calciatori in evidenza:",
     tabNews: "Notizie & Mercato",
-    tabReactions: "Reazioni Estere",
+    tabReactions: "Forum Esteri (Reddit · 𝕏)",
     tabTalk: "Discussione Globale",
     favorite: "Segui",
     favorited: "Seguito",
@@ -210,6 +254,14 @@ const I18N: Record<string, Record<string, string>> = {
     originalLang: "Lingua originale",
     writeComment: "Interagisci nella tua lingua con i tifosi del mondo",
     postComment: "Invia",
+    reply: "Rispondi",
+    replyPlaceholder: "Rispondi a questa discussione...",
+    cancel: "Annulla",
+    delete: "Elimina",
+    deleteConfirm: "Sei sicuro di voler eliminare questo commento?",
+    promptPin: "Inserisci il PIN a 4 cifre impostato durante la scrittura:",
+    wrongPassword: "Il PIN non è corretto.",
+    passwordPlaceholder: "PIN 4 cifre",
     nicknamePlaceholder: "Nickname",
     commentPlaceholder: "Condividi la tua analisi su questo calciatore...",
     readOriginal: "Leggi l'articolo originale",
@@ -247,15 +299,47 @@ export default function Home() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // 원댓글 작성 상태
   const [authorName, setAuthorName] = useState("");
   const [authorCountry, setAuthorCountry] = useState("KR");
+  const [authorPin, setAuthorPin] = useState("");
   const [newCommentText, setNewCommentText] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
+
+  // 대댓글(답글) 작성 상태
+  const [replyingToId, setReplyingToId] = useState<string | null>(null);
+  const [replyName, setReplyName] = useState("");
+  const [replyCountry, setReplyCountry] = useState("KR");
+  const [replyPin, setReplyPin] = useState("");
+  const [replyText, setReplyText] = useState("");
+  const [submittingReply, setSubmittingReply] = useState(false);
+
+  // 대댓글 스레드 확장 토글 상태
+  const [expandedReplies, setExpandedReplies] = useState<Record<string, boolean>>({});
+
+  // 본인 기기에서 작성한 댓글 ID 목록 (localStorage 보관)
+  const [myCommentIds, setMyCommentIds] = useState<string[]>([]);
 
   const [showOriginalMap, setShowOriginalMap] = useState<Record<string, boolean>>({});
   const [favorites, setFavorites] = useState<string[]>([]);
 
   const t = I18N[lang] || I18N.ko;
+
+  // localStorage에서 내 작성 댓글 목록 로드
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("footdi_my_comments");
+      if (saved) setMyCommentIds(JSON.parse(saved));
+    } catch (e) {}
+  }, []);
+
+  const recordMyComment = (id: string) => {
+    try {
+      const updated = [...myCommentIds, id];
+      setMyCommentIds(updated);
+      localStorage.setItem("footdi_my_comments", JSON.stringify(updated));
+    } catch (e) {}
+  };
 
   // 1. 트렌딩 선수 랭킹 목록 로드
   useEffect(() => {
@@ -330,6 +414,7 @@ export default function Home() {
     fetchTabData();
   }, [selectedPlayer, lang]);
 
+  // 원댓글 작성
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPlayer || !newCommentText.trim()) return;
@@ -344,6 +429,7 @@ export default function Home() {
           author_country: authorCountry,
           source_lang: lang,
           text: newCommentText.trim(),
+          password: authorPin.trim()
         }),
       });
 
@@ -354,8 +440,11 @@ export default function Home() {
 
       if (res.ok) {
         const created: Comment = await res.json();
+        created.replies = [];
         setComments([created, ...comments]);
+        recordMyComment(created.id);
         setNewCommentText("");
+        setAuthorPin("");
       }
     } catch (err) {
       console.error("Comment submit error:", err);
@@ -364,12 +453,113 @@ export default function Home() {
     }
   };
 
+  // 대댓글(답글) 작성
+  const handleReplySubmit = async (parentId: string) => {
+    if (!selectedPlayer || !replyText.trim()) return;
+
+    setSubmittingReply(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/players/${selectedPlayer.id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          author_name: replyName.trim() || "축구팬",
+          author_country: replyCountry,
+          source_lang: lang,
+          text: replyText.trim(),
+          parent_id: parentId,
+          password: replyPin.trim()
+        }),
+      });
+
+      if (res.status === 429) {
+        alert("도배 방지를 위해 10초 후에 다시 작성하실 수 있습니다.");
+        return;
+      }
+
+      if (res.ok) {
+        const created: Comment = await res.json();
+        recordMyComment(created.id);
+        
+        // 부모 댓글의 replies 배열에 즉시 추가
+        setComments(comments.map(c => {
+          if (c.id === parentId) {
+            return { ...c, replies: [...(c.replies || []), created] };
+          }
+          return c;
+        }));
+
+        setReplyText("");
+        setReplyPin("");
+        setReplyingToId(null);
+        setExpandedReplies(prev => ({ ...prev, [parentId]: true }));
+      }
+    } catch (err) {
+      console.error("Reply submit error:", err);
+    } finally {
+      setSubmittingReply(false);
+    }
+  };
+
+  // 댓글/대댓글 삭제
+  const handleCommentDelete = async (commentId: string, isReply: boolean = false, parentId?: string) => {
+    const isMine = myCommentIds.includes(commentId);
+    let pin = "";
+
+    if (isMine) {
+      if (!confirm(t.deleteConfirm)) return;
+    } else {
+      const inputPin = prompt(t.promptPin);
+      if (!inputPin) return;
+      pin = inputPin.trim();
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/api/comments/${commentId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: pin, force: isMine }),
+      });
+
+      if (res.status === 403) {
+        alert(t.wrongPassword);
+        return;
+      }
+
+      if (res.ok) {
+        if (isReply && parentId) {
+          // 대댓글 목록에서 삭제
+          setComments(comments.map(c => {
+            if (c.id === parentId) {
+              return { ...c, replies: (c.replies || []).filter(r => r.id !== commentId) };
+            }
+            return c;
+          }));
+        } else {
+          // 원댓글 목록에서 삭제 (CASCADE로 하위 대댓글도 삭제됨)
+          setComments(comments.filter(c => c.id !== commentId));
+        }
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+    }
+  };
+
   const handleLike = async (commentId: string) => {
     try {
       const res = await fetch(`${API_BASE}/api/comments/${commentId}/like`, { method: "POST" });
       if (res.ok) {
         const data = await res.json();
-        setComments(comments.map((c) => (c.id === commentId ? { ...c, likes_count: data.likes_count } : c)));
+        setComments(comments.map((c) => {
+          if (c.id === commentId) return { ...c, likes_count: data.likes_count };
+          if (c.replies) {
+            return {
+              ...c,
+              replies: c.replies.map(r => r.id === commentId ? { ...r, likes_count: data.likes_count } : r)
+            };
+          }
+          return c;
+        }));
       }
     } catch (err) {
       console.error("Like error:", err);
@@ -600,7 +790,7 @@ export default function Home() {
         </div>
       ) : (
         <div>
-          {/* [탭 1] 뉴스 & 이적 피드 (알약 뱃지 제거, 깔끔한 텍스트 위주) */}
+          {/* [탭 1] 뉴스 & 이적 피드 */}
           {activeTab === "news" && (
             <div className="space-y-3">
               {articles.length === 0 ? (
@@ -650,10 +840,10 @@ export default function Home() {
             </div>
           )}
 
-          {/* [탭 2] 해외 현지 반응 (AI 요약 박스 제거 -> 실제 최다 추천 베스트 인용구) */}
+          {/* [탭 2] 해외 포럼 반응 (Reddit · 𝕏 · YouTube) */}
           {activeTab === "reactions" && (
             <div className="space-y-4">
-              {/* 실제 현지 최다 추천 코멘트 하이라이트 (AI 가짜 문구 배제) */}
+              {/* 실제 현지 최다 추천 코멘트 하이라이트 */}
               {featuredQuote && (
                 <div className="rounded-lg border-l-2 border-emerald-500 bg-neutral-900 p-4 border border-y-0 border-r-0">
                   <div className="flex items-center justify-between text-xs text-neutral-400 mb-2">
@@ -682,7 +872,7 @@ export default function Home() {
                 <div className="space-y-3">
                   {reactions.map((r) => (
                     <div key={r.id} className="rounded-lg bg-neutral-900/90 p-4 border border-neutral-800 hover:border-neutral-700 transition">
-                      {/* 상단: 플랫폼 고유 마크 + 작성자 u/닉네임 + 작성 시간 */}
+                      {/* 상단: 플랫폼 마크 + 작성자 u/닉네임 + 작성 시간 */}
                       <div className="flex items-center justify-between text-xs mb-2">
                         <div className="flex items-center gap-2">
                           {r.platform.includes('Reddit') ? (
@@ -708,7 +898,7 @@ export default function Home() {
                         </span>
                       </div>
 
-                      {/* 댓글 본문: 한국어 번역 텍스트 */}
+                      {/* 본문 */}
                       <div className="pl-1">
                         <p className="text-sm font-medium text-neutral-100 leading-relaxed">
                           {r.translated_text || r.original_text}
@@ -727,7 +917,7 @@ export default function Home() {
                         )}
                       </div>
 
-                      {/* 하단: 업보트/추천, 답글 스레드 지표 */}
+                      {/* 하단 지표 */}
                       <div className="mt-3 flex items-center justify-between border-t border-neutral-800/60 pt-2 text-xs text-neutral-400">
                         <div className="flex items-center gap-3">
                           <span className="flex items-center gap-1 font-semibold text-emerald-400">
@@ -751,12 +941,12 @@ export default function Home() {
             </div>
           )}
 
-          {/* [탭 3] 글로벌 토크 (10초 쿨다운 도배 방지 적용) */}
+          {/* [탭 3] 글로벌 토크 (대댓글 & 비밀번호 자가 삭제 탑재) */}
           {activeTab === "talk" && (
             <div className="space-y-4">
               {/* 유저 댓글 작성 폼 */}
               <form onSubmit={handleCommentSubmit} className="rounded-lg bg-neutral-900 p-4 border border-neutral-800">
-                <div className="flex items-center justify-between mb-2.5">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
                   <h4 className="text-xs font-medium text-neutral-300">{t.writeComment}</h4>
                   <div className="flex items-center gap-2">
                     <select
@@ -777,7 +967,15 @@ export default function Home() {
                       value={authorName}
                       onChange={(e) => setAuthorName(e.target.value)}
                       placeholder={t.nicknamePlaceholder}
-                      className="w-24 rounded bg-neutral-800 px-2 py-1 text-xs text-white placeholder-neutral-500 border border-neutral-700 focus:outline-none"
+                      className="w-20 sm:w-24 rounded bg-neutral-800 px-2 py-1 text-xs text-white placeholder-neutral-500 border border-neutral-700 focus:outline-none"
+                    />
+                    <input
+                      type="password"
+                      maxLength={4}
+                      value={authorPin}
+                      onChange={(e) => setAuthorPin(e.target.value)}
+                      placeholder={t.passwordPlaceholder}
+                      className="w-18 sm:w-20 rounded bg-neutral-800 px-2 py-1 text-xs text-white placeholder-neutral-500 border border-neutral-700 focus:outline-none text-center"
                     />
                   </div>
                 </div>
@@ -802,8 +1000,8 @@ export default function Home() {
                 </div>
               </form>
 
-              {/* 유저 댓글 목록 */}
-              <div className="space-y-2.5">
+              {/* 유저 댓글 & 대댓글 목록 */}
+              <div className="space-y-3">
                 {comments.length === 0 ? (
                   <div className="rounded border border-dashed border-neutral-800 p-8 text-center text-neutral-400">
                     <p className="text-sm">{t.emptyComments}</p>
@@ -813,43 +1011,190 @@ export default function Home() {
                     const isShowingOriginal = !!showOriginalMap[c.id];
                     const flag = COUNTRY_FLAGS[c.author_country] || "⚽";
                     const srcLangName = LANG_NAMES[c.source_lang] || c.source_lang;
+                    const isReplying = replyingToId === c.id;
+                    const hasReplies = c.replies && c.replies.length > 0;
 
                     return (
                       <div key={c.id} className="rounded-lg bg-neutral-900 p-4 border border-neutral-800">
+                        {/* 원댓글 헤더 */}
                         <div className="flex items-center justify-between text-xs mb-1.5">
                           <div className="flex items-center gap-2">
                             <span className="text-sm">{flag}</span>
                             <span className="font-semibold text-white">{c.author_name}</span>
-                            <span className="text-neutral-500">
+                            <span className="text-neutral-500 text-[11px]">
                               {new Date(c.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}
                             </span>
                           </div>
-                          <button
-                            onClick={() => handleLike(c.id)}
-                            className="flex items-center gap-1 rounded px-2 py-0.5 text-xs text-neutral-400 hover:text-red-400 transition"
-                          >
-                            <Heart className="h-3 w-3" />
-                            {c.likes_count}
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleLike(c.id)}
+                              className="flex items-center gap-1 rounded px-2 py-0.5 text-xs text-neutral-400 hover:text-red-400 transition"
+                            >
+                              <Heart className="h-3 w-3" />
+                              {c.likes_count}
+                            </button>
+                            <button
+                              onClick={() => handleCommentDelete(c.id)}
+                              className="text-neutral-500 hover:text-neutral-300 transition p-1 text-[11px]"
+                              title={t.delete}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
                         </div>
 
-                        {/* 댓글 본문 */}
+                        {/* 원댓글 본문 */}
                         <p className="text-sm text-neutral-200 leading-relaxed font-normal">
                           {isShowingOriginal ? c.original_text : c.display_text}
                         </p>
 
-                        {/* 번역 메타 정보 및 원문 토글 */}
-                        {c.is_translated && (
-                          <div className="mt-2 flex items-center justify-between border-t border-neutral-800 pt-1.5 text-xs">
-                            <span className="text-neutral-500">
-                              {LANG_NAMES[lang]} {t.translatedFrom} ({t.originalLang}: {srcLangName})
-                            </span>
+                        {/* 원댓글 하단 액션바 */}
+                        <div className="mt-2.5 flex items-center justify-between border-t border-neutral-800/80 pt-2 text-xs">
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => setReplyingToId(isReplying ? null : c.id)}
+                              className="flex items-center gap-1 text-neutral-400 hover:text-neutral-200 font-medium transition"
+                            >
+                              <CornerDownRight className="h-3 w-3" />
+                              <span>{t.reply}</span>
+                              {hasReplies && (
+                                <span className="rounded bg-neutral-800 px-1.5 py-0.2 text-[10px] text-neutral-300 border border-neutral-700">
+                                  {c.replies?.length}
+                                </span>
+                              )}
+                            </button>
+                          </div>
+
+                          {c.is_translated && (
                             <button
                               onClick={() => toggleOriginal(c.id)}
-                              className="text-neutral-400 hover:text-neutral-200 underline transition"
+                              className="text-[11px] text-neutral-400 hover:text-neutral-200 underline transition"
                             >
                               {isShowingOriginal ? t.viewTranslated : t.viewOriginal}
                             </button>
+                          )}
+                        </div>
+
+                        {/* 인라인 대댓글 작성 폼 */}
+                        {isReplying && (
+                          <div className="mt-3 rounded-md bg-neutral-950 p-3 border border-neutral-800">
+                            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                              <span className="text-xs font-semibold text-neutral-300 flex items-center gap-1">
+                                <CornerDownRight className="h-3 w-3 text-emerald-400" /> {t.reply}
+                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <select
+                                  value={replyCountry}
+                                  onChange={(e) => setReplyCountry(e.target.value)}
+                                  className="rounded bg-neutral-800 px-1.5 py-0.5 text-xs text-neutral-200 border border-neutral-700 cursor-pointer focus:outline-none"
+                                >
+                                  <option value="KR">🇰🇷 한국</option>
+                                  <option value="ES">🇪🇸 España</option>
+                                  <option value="GB">🇬🇧 UK</option>
+                                  <option value="US">🇺🇸 USA</option>
+                                  <option value="FR">🇫🇷 France</option>
+                                  <option value="IT">🇮🇹 Italia</option>
+                                  <option value="JP">🇯🇵 日本</option>
+                                </select>
+                                <input
+                                  type="text"
+                                  value={replyName}
+                                  onChange={(e) => setReplyName(e.target.value)}
+                                  placeholder={t.nicknamePlaceholder}
+                                  className="w-20 rounded bg-neutral-800 px-2 py-0.5 text-xs text-white placeholder-neutral-500 border border-neutral-700 focus:outline-none"
+                                />
+                                <input
+                                  type="password"
+                                  maxLength={4}
+                                  value={replyPin}
+                                  onChange={(e) => setReplyPin(e.target.value)}
+                                  placeholder={t.passwordPlaceholder}
+                                  className="w-16 rounded bg-neutral-800 px-1.5 py-0.5 text-xs text-white placeholder-neutral-500 border border-neutral-700 focus:outline-none text-center"
+                                />
+                              </div>
+                            </div>
+
+                            <textarea
+                              rows={2}
+                              value={replyText}
+                              onChange={(e) => setReplyText(e.target.value)}
+                              placeholder={t.replyPlaceholder}
+                              className="w-full rounded bg-neutral-900 p-2 text-xs text-white placeholder-neutral-500 border border-neutral-800 focus:border-neutral-700 focus:outline-none transition"
+                            />
+
+                            <div className="mt-2 flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setReplyingToId(null)}
+                                className="rounded px-2.5 py-1 text-xs text-neutral-400 hover:text-white transition"
+                              >
+                                {t.cancel}
+                              </button>
+                              <button
+                                type="button"
+                                disabled={submittingReply || !replyText.trim()}
+                                onClick={() => handleReplySubmit(c.id)}
+                                className="flex items-center gap-1 rounded bg-neutral-200 px-3 py-1 text-xs font-semibold text-neutral-900 hover:bg-white disabled:opacity-40 transition"
+                              >
+                                <Send className="h-3 w-3" />
+                                {submittingReply ? "..." : t.postComment}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 대댓글(답글) 스레드 목록 (세로선 인덴트) */}
+                        {hasReplies && (
+                          <div className="mt-3 space-y-2 border-l-2 border-neutral-800 pl-3 sm:pl-4 ml-1.5">
+                            {c.replies!.map((reply) => {
+                              const isReplyShowingOriginal = !!showOriginalMap[reply.id];
+                              const replyFlag = COUNTRY_FLAGS[reply.author_country] || "⚽";
+
+                              return (
+                                <div key={reply.id} className="rounded bg-neutral-950/70 p-3 border border-neutral-800/80">
+                                  <div className="flex items-center justify-between text-xs mb-1">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-xs">{replyFlag}</span>
+                                      <span className="font-semibold text-neutral-200">{reply.author_name}</span>
+                                      <span className="text-neutral-500 text-[10px]">
+                                        {new Date(reply.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                      <button
+                                        onClick={() => handleLike(reply.id)}
+                                        className="flex items-center gap-1 rounded px-1.5 py-0.2 text-[11px] text-neutral-400 hover:text-red-400 transition"
+                                      >
+                                        <Heart className="h-2.5 w-2.5" />
+                                        {reply.likes_count}
+                                      </button>
+                                      <button
+                                        onClick={() => handleCommentDelete(reply.id, true, c.id)}
+                                        className="text-neutral-500 hover:text-neutral-300 transition text-[10px]"
+                                        title={t.delete}
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  <p className="text-xs text-neutral-300 leading-relaxed font-normal">
+                                    {isReplyShowingOriginal ? reply.original_text : reply.display_text}
+                                  </p>
+
+                                  {reply.is_translated && (
+                                    <div className="mt-1 flex justify-end">
+                                      <button
+                                        onClick={() => toggleOriginal(reply.id)}
+                                        className="text-[10px] text-neutral-500 hover:text-neutral-300 underline transition"
+                                      >
+                                        {isReplyShowingOriginal ? t.viewTranslated : t.viewOriginal}
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                       </div>

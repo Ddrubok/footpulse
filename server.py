@@ -8,6 +8,7 @@ import html
 import re
 import sys
 import time
+import hashlib
 
 sys.path.append("/sdcard/Download")
 import ingestion
@@ -285,21 +286,27 @@ def get_player_comments(player_id):
         sql = """
             SELECT 
                 c.id, c.player_id, c.author_name, c.author_country, c.source_lang, c.original_text, c.likes_count, c.created_at,
+                c.parent_id, (c.password_hash IS NOT NULL) AS has_password,
                 t.translated_text
             FROM site_comments c
             LEFT JOIN site_comment_translations t 
                 ON c.id = t.comment_id AND t.target_lang = :lang
             WHERE c.player_id = :pid
-            ORDER BY c.created_at DESC;
+            ORDER BY c.created_at ASC;
         """
         rows = conn.run(sql, pid=player_id, lang=lang)
         columns = [c['name'] for c in conn.columns]
         
-        comments = []
+        # 1차 매핑 및 번역 처리
+        all_items = []
         for row in rows:
             d = dict(zip(columns, row))
             cid = str(d['id'])
             d['id'] = cid
+            if d.get('parent_id'):
+                d['parent_id'] = str(d['parent_id'])
+            else:
+                d['parent_id'] = None
             if 'created_at' in d and d['created_at']:
                 d['created_at'] = str(d['created_at'])
                 
@@ -327,15 +334,32 @@ def get_player_comments(player_id):
                 d['display_text'] = new_trans
                 d['is_translated'] = True
 
-            comments.append(d)
+            d['replies'] = []
+            all_items.append(d)
+
+        # 2차 계층형 트리 구성 (원댓글 최신순, 대댓글은 등록순 정렬)
+        parents = {}
+        children = []
+        for item in all_items:
+            if not item['parent_id']:
+                parents[item['id']] = item
+            else:
+                children.append(item)
+
+        for child in children:
+            pid = child['parent_id']
+            if pid in parents:
+                parents[pid]['replies'].append(child)
+
+        sorted_comments = list(reversed(list(parents.values())))
         return json.dumps({
-            "comments": comments,
-            "count": len(comments)
+            "comments": sorted_comments,
+            "count": len(all_items)
         }, ensure_ascii=False)
     finally:
         conn.close()
 
-# 7. [탭 3] 글로벌 토크 댓글 작성 API
+# 7. [탭 3] 글로벌 토크 댓글 & 대댓글 작성 API
 @app.route('/api/players/<player_id>/comments', method='POST')
 def post_player_comment(player_id):
     response.content_type = 'application/json; charset=utf-8'
@@ -348,10 +372,16 @@ def post_player_comment(player_id):
     author_country = body.get('author_country', 'KR').strip().upper()
     source_lang = body.get('source_lang', 'ko').strip().lower()
     text = clean_text(body.get('text', ''))
+    parent_id = body.get('parent_id')
+    password = str(body.get('password', '')).strip()
 
     if not text:
         response.status = 400
         return json.dumps({"error": "Content is required"})
+
+    # 비밀번호 4자리 SHA-256 해싱
+    pwd_hash = hashlib.sha256(password.encode('utf-8')).hexdigest() if password else None
+    valid_parent_id = str(parent_id).strip() if parent_id and str(parent_id).strip() else None
 
     # IP 기반 10초 도배 방지 쿨다운 검사
     client_ip = get_client_ip()
@@ -365,10 +395,10 @@ def post_player_comment(player_id):
     conn = get_db()
     try:
         res = conn.run("""
-            INSERT INTO site_comments (player_id, author_name, author_country, source_lang, original_text)
-            VALUES (:pid, :name, :country, :lang, :text)
+            INSERT INTO site_comments (player_id, author_name, author_country, source_lang, original_text, parent_id, password_hash)
+            VALUES (:pid, :name, :country, :lang, :text, :parent, :pwd)
             RETURNING id, created_at;
-        """, pid=player_id, name=author_name, country=author_country, lang=source_lang, text=text)
+        """, pid=player_id, name=author_name, country=author_country, lang=source_lang, text=text, parent=valid_parent_id, pwd=pwd_hash)
         
         new_id = str(res[0][0])
         created_at = str(res[0][1])
@@ -382,7 +412,10 @@ def post_player_comment(player_id):
             "source_lang": source_lang,
             "original_text": text,
             "display_text": text,
+            "parent_id": valid_parent_id,
+            "has_password": bool(pwd_hash),
             "likes_count": 0,
+            "replies": [],
             "created_at": created_at
         }, ensure_ascii=False)
     finally:
@@ -402,6 +435,38 @@ def like_comment(comment_id):
         """, cid=comment_id)
         count = res[0][0] if res else 0
         return json.dumps({"success": True, "likes_count": count})
+    finally:
+        conn.close()
+
+# 9. 댓글 & 대댓글 자가 삭제 API (비밀번호 검증 또는 로컬스토리지 소유권 인증)
+@app.route('/api/comments/<comment_id>', method=['DELETE', 'POST'])
+def delete_comment(comment_id):
+    response.content_type = 'application/json; charset=utf-8'
+    try:
+        body = request.json or {}
+    except:
+        body = {}
+
+    pwd = str(body.get('password', '')).strip()
+    force = body.get('force', False)
+    
+    conn = get_db()
+    try:
+        rows = conn.run("SELECT id, password_hash FROM site_comments WHERE id = :cid;", cid=comment_id)
+        if not rows:
+            response.status = 404
+            return json.dumps({"error": "삭제할 댓글을 찾을 수 없습니다."}, ensure_ascii=False)
+        
+        stored_hash = rows[0][1]
+        if stored_hash:
+            hashed_input = hashlib.sha256(pwd.encode('utf-8')).hexdigest()
+            if hashed_input != stored_hash and not force:
+                response.status = 403
+                return json.dumps({"error": "비밀번호가 일치하지 않습니다."}, ensure_ascii=False)
+        
+        # 삭제 실행 (CASCADE로 하위 대댓글도 함께 삭제)
+        conn.run("DELETE FROM site_comments WHERE id = :cid;", cid=comment_id)
+        return json.dumps({"success": True, "deleted_id": comment_id}, ensure_ascii=False)
     finally:
         conn.close()
 
